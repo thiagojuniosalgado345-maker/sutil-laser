@@ -210,7 +210,7 @@
     const stage = $('#model3d');
     const generation = ++bottleViewerGeneration;
     try {
-      const { createBottleViewer } = await import('./bottle-viewer.js');
+      const { createBottleViewer } = await import(new URL('assets/bottle-viewer.js', document.baseURI).href);
       if (generation !== bottleViewerGeneration || !$('#customModal').classList.contains('open')) return;
       const viewer = await createBottleViewer(stage, { customization: currentBottleCustomization() });
       if (generation !== bottleViewerGeneration || !$('#customModal').classList.contains('open')) { viewer.dispose(); return; }
