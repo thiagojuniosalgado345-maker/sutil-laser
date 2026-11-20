@@ -150,6 +150,13 @@ function makePersonalizationOverlay(bodyMesh, renderer) {
   const uv = geometry.attributes.uv;
   if (!uv) throw new Error('A malha não contém coordenadas UV para a gravação.');
 
+  // A convenção de rotação do GLB faz o U crescer da direita para a esquerda
+  // quando visto de frente; espelhar U deixa nomes e logos legíveis na face frontal.
+  for (let index = 0; index < uv.count; index += 1) {
+    uv.setX(index, 1 - uv.getX(index));
+  }
+  uv.needsUpdate = true;
+
   const positions = geometry.attributes.position;
   const normals = geometry.attributes.normal;
   if (!normals) geometry.computeVertexNormals();
