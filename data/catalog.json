@@ -1,5 +1,17 @@
 [
   {
+    "id": "garrafa-termica-azul",
+    "name": "Garrafa térmica azul com tampa",
+    "category": "Garrafas",
+    "description": "Garrafa térmica azul com acabamento fosco, detalhes em aço inox e tampa preta. Personalização sob consulta.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "bottle",
+    "image": "assets/garrafa-azul-sem-nome.jpg",
+    "active": true,
+    "featured": true
+  },
+  {
     "id": "copo-473",
     "name": "Copo térmico 473 ml",
     "category": "Copos térmicos",
