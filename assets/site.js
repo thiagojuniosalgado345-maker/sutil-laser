@@ -205,10 +205,10 @@
       for(let i=0;i<img.data.length;i+=4){const n=(Math.random()-.5)*12;img.data[i]+=n;img.data[i+1]+=n;img.data[i+2]+=n;img.data[i+3]=255;}
       ctx.putImageData(img,0,0);
     } else {
-      const g=ctx.createLinearGradient(0,0,0,1024);
-      g.addColorStop(0,'#d9dcda');g.addColorStop(.25,'#8b9290');g.addColorStop(.48,'#f5f5ef');g.addColorStop(.72,'#9ca3a0');g.addColorStop(1,'#d9dcda');
+      const g=ctx.createLinearGradient(0,0,1024,0);
+      g.addColorStop(0,'#69716e');g.addColorStop(.18,'#dfe2df');g.addColorStop(.34,'#858d89');g.addColorStop(.50,'#f6f7f2');g.addColorStop(.67,'#a3aaa6');g.addColorStop(.84,'#eceeeb');g.addColorStop(1,'#68716d');
       ctx.fillStyle=g;ctx.fillRect(0,0,1024,1024);
-      for(let i=0;i<2400;i++){const y=Math.random()*1024;ctx.fillStyle=Math.random()>.5?'rgba(255,255,255,.10)':'rgba(35,41,42,.07)';ctx.fillRect(0,y,1024,Math.random()*1.2);}
+      for(let i=0;i<3200;i++){const x=Math.random()*1024;ctx.fillStyle=Math.random()>.5?'rgba(255,255,255,.11)':'rgba(35,41,42,.08)';ctx.fillRect(x,0,Math.random()*.9+.2,1024);}
     }
     const texture=new THREE.CanvasTexture(canvas);
     texture.encoding=THREE.sRGBEncoding;
@@ -277,9 +277,9 @@
       bottleRenderer.toneMapping=THREE.ACESFilmicToneMapping;
       bottleRenderer.toneMappingExposure=1.12;
       bottleScene=new THREE.Scene();
-      bottleCamera=new THREE.PerspectiveCamera(34,width/height,.1,100);
-      bottleCamera.position.set(3.0,3.1,7.8);
-      bottleCamera.lookAt(0,1.55,0);
+      bottleCamera=new THREE.PerspectiveCamera(36,width/height,.1,100);
+      bottleCamera.position.set(2.5,2.8,6.6);
+      bottleCamera.lookAt(0,1.58,0);
       bottleScene.add(new THREE.HemisphereLight(0xf8f5ed,0x343b56,2.05));
       const key=new THREE.DirectionalLight(0xfff2dc,3.5);key.position.set(-4,7,6);bottleScene.add(key);
       const fill=new THREE.DirectionalLight(0xffffff,2.25);fill.position.set(5,4,3);bottleScene.add(fill);
@@ -289,7 +289,7 @@
       const shell=new THREE.Group();shell.rotation.y=-Math.PI/2;bottleRoot.add(shell);
       const blueMap=finishTexture('blue'),steelMap=finishTexture('steel');
       const blueMat=new THREE.MeshStandardMaterial({map:blueMap,color:0xffffff,metalness:.22,roughness:.39});
-      const steelMat=new THREE.MeshStandardMaterial({map:steelMap,metalness:.82,roughness:.27});
+      const steelMat=new THREE.MeshStandardMaterial({map:steelMap,bumpMap:steelMap,bumpScale:.009,metalness:.86,roughness:.235});
       const blackMat=new THREE.MeshStandardMaterial({color:0x101114,metalness:.12,roughness:.27});
       const darkMat=new THREE.MeshStandardMaterial({color:0x050607,metalness:.06,roughness:.34});
       addLathe(shell,[[.695,.10],[.70,.15],[.70,.42],[.735,.54],[.77,.62],[.77,.66]],steelMat);
