@@ -58,3 +58,5 @@
 .model-3d-controls button{width:29px;height:27px;border:1px solid #d8d1c4;background:transparent;color:#343a34;font-size:17px}
 .engraving-overlay.on-3d-model{display:none}
 @media(max-width:760px){.model-3d-object{transform-origin:center center;scale:.82}.model-3d-hint{bottom:8px}.model-3d-shadow{bottom:13%}}
+
+.model-3d-stage[hidden]{display:none!important}.model-logo{position:absolute;z-index:3;top:40%;left:50%;transform:translate(-50%,-50%);max-width:76px;max-height:58px;object-fit:contain;filter:drop-shadow(0 1px 1px #fff8)}
