@@ -92,3 +92,11 @@
   .bottle-3d-loading{bottom:12px}
   .model-3d-controls{top:8px;gap:8px}
 }
+
+/* Mensagem de diagnóstico do 3D: não troca o modelo por fotografia quando há erro. */
+.model-3d-stage.bottle-viewer-failed{display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 38%,#fbf8f1 0%,#e9e4d9 62%,#d9d2c5 100%)}
+.bottle-3d-error{width:min(100%,360px);display:grid;justify-items:center;gap:13px;padding:24px;background:#fffefaee;border:1px solid #d8d1c4;text-align:center;box-shadow:0 12px 35px #30291b14}
+.bottle-3d-error strong{font:500 20px/1.25 var(--serif);color:var(--ink)}
+.bottle-3d-error-detail{max-width:100%;overflow-wrap:anywhere;color:var(--muted);font:10px/1.7 var(--sans)}
+.bottle-3d-error .button{min-width:180px}
+@media(max-width:760px){.model-3d-stage.bottle-viewer-failed{padding:12px}.bottle-3d-error{padding:18px}}
