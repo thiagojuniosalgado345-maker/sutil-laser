@@ -22,6 +22,7 @@
     </a>
     <nav class="main-nav" id="mainNav" aria-label="Navegação principal">
       <a href="#colecao">Coleção</a><a href="#personalizacao">Personalização</a><a href="#processo">Como funciona</a><a href="#duvidas">Dúvidas</a>
+      <button class="quote-link" id="quoteOpen" type="button">Minha seleção <span id="quoteCount">0</span></button>
       <a class="nav-cta" href="#colecao">Explorar peças <span aria-hidden="true">↗</span></a>
     </nav>
     <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">☰</button>
@@ -144,11 +145,12 @@
         </div>
         <div class="field" id="sizeField"><label for="customSize">Tamanho ilustrativo</label><input id="customSize" type="range" min="12" max="38" value="23"><div class="range-meta"><span>Menor</span><span>Maior</span></div></div>
         <div class="field" id="positionField"><label for="customPosition">Altura da composição</label><input id="customPosition" type="range" min="20" max="80" value="52"><div class="range-meta"><span>Mais acima</span><span>Mais abaixo</span></div></div><div class="field" id="positionXField"><label for="customPositionX">Posição horizontal</label><input id="customPositionX" type="range" min="15" max="85" value="50"><div class="range-meta"><span>Esquerda</span><span>Direita</span></div></div><div class="field"><label for="customQuantity">Quantidade desejada</label><input id="customQuantity" type="number" min="1" max="999" value="1"></div>
-        <button class="button modal-submit" id="requestButton">Enviar ideia para a equipe ↗</button>
+        <button class="button modal-submit" id="requestButton">Adicionar à minha seleção ＋</button>
         <div class="tiny-note">Antes de confirmar, solicite o valor, a disponibilidade, o prazo e a aprovação da arte final. Se anexar uma logo, envie o arquivo também pelo canal de atendimento.</div>
       </div>
     </div>
   </div>
+  <div class="modal-backdrop quote-backdrop" id="quoteModal" role="dialog" aria-modal="true" aria-labelledby="quoteTitle"><section class="quote-dialog"><header class="quote-header"><div><span class="eyebrow">Sua lista de produtos</span><h2 id="quoteTitle">Minha seleção.</h2></div><button class="modal-close" id="quoteClose" aria-label="Fechar seleção">×</button></header><div class="quote-items" id="quoteItems"><div class="catalog-empty">Sua seleção ainda está vazia. Explore a coleção e adicione as peças que deseja consultar.</div></div><footer class="quote-footer"><p class="tiny-note">Esta é uma solicitação de orçamento, não um pedido pago. A equipe confirma preço, disponibilidade, prazo e arte final.</p><button class="button modal-submit" id="sendQuoteButton">Enviar lista para a equipe ↗</button></footer></section></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
