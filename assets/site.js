@@ -153,16 +153,23 @@
     $('#customColor').value = '#a98656';
     $('#customSize').value = '23';
     $('#customPosition').value = '52';
+    $('#customPositionX').value = '50';
+    $('#customQuantity').value = '1';
     const image = product.image_url || (Array.isArray(product.gallery) && product.gallery[0]) || '';
-    $('#previewImage').hidden = !image;
-    $('#previewImage').src = image || '';
+    const previewImage = $('#previewImage');
+    previewImage.onload = () => { previewImage.hidden = false; $('#stagePlaceholder').hidden = true; };
+    previewImage.onerror = () => { previewImage.hidden = true; $('#stagePlaceholder').hidden = false; };
+    previewImage.hidden = !image;
+    if (image) previewImage.src = image; else previewImage.removeAttribute('src');
     $('#stagePlaceholder').hidden = !!image;
     $('#engravingOverlay').style.top = '52%';
+    $('#engravingOverlay').style.left = '50%';
     fieldVisible('textField','text');
     fieldVisible('logoField','logo');
     fieldVisible('fontField','font');
     fieldVisible('colorField','color');
     fieldVisible('positionField','position');
+    fieldVisible('positionXField','position');
     fieldVisible('sizeField','size');
     $('#customModal').classList.add('open');
     document.body.classList.add('locked');
@@ -184,6 +191,7 @@
     el.style.fontSize = $('#customSize').value + 'px';
     el.style.color = $('#customColor').value;
     $('#engravingOverlay').style.top = $('#customPosition').value + '%';
+    $('#engravingOverlay').style.left = $('#customPositionX').value + '%';
   }
   function buildMessage() {
     const file = $('#customLogo').files[0];
@@ -194,7 +202,8 @@
       'Texto: '+($('#customText').value.trim() || 'a combinar'),
       'Estilo da letra: '+$('#customFont').selectedOptions[0].text,
       'Cor ilustrativa: '+$('#customColor').selectedOptions[0].text,
-      'Tamanho/posição: '+$('#customSize').value+' / '+$('#customPosition').value,
+      'Quantidade: '+Math.min(999,Math.max(1,Number.parseInt($('#customQuantity').value,10)||1)),
+      'Tamanho/posição (referência): '+$('#customSize').value+' / altura '+$('#customPosition').value+' / largura '+$('#customPositionX').value,
       'Arquivo de referência: '+(file ? file.name+' (vou anexá-lo no atendimento)' : 'não anexado'),
       'Por favor, confirmem disponibilidade, preço final, prazo e a arte antes da produção.'
     ].join('\n');
@@ -233,7 +242,11 @@
     if (product) openCustomizer(product);
   });
   $('#customText').addEventListener('input',updatePreview);
-  ['customFont','customColor','customSize','customPosition'].forEach(id => $('#'+id).addEventListener('input',updatePreview));
+  ['customFont','customColor','customSize','customPosition','customPositionX'].forEach(id => $('#'+id).addEventListener('input',updatePreview));
+  $('#customQuantity').addEventListener('change',event => {
+    const value=Math.min(999,Math.max(1,Number.parseInt(event.target.value,10)||1));
+    event.target.value=String(value);
+  });
   $('#customLogo').addEventListener('change',event => {
     const file = event.target.files?.[0];
     if (!file) return;
