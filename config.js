@@ -1,6 +1,6 @@
-/* Configuração pública do site. A chave anon/public do Supabase pode ficar no frontend
+/* Configuração pública do site. A chave publishable pode ficar no frontend
    SOMENTE com RLS corretamente configurada. Nunca coloque service_role ou senha aqui. */
 window.SUPABASE_CONFIG = {
-  url: "COLE_A_URL_DO_SEU_PROJETO",
-  anonKey: "COLE_SUA_CHAVE_PUBLISHABLE_OU_ANON"
+  url: "https://moxjnfvbsfmhpziauevn.supabase.co",
+  anonKey: "sb_publishable_rLiIQ3NM2T8MoGZNQJG22w_SgMKzG6m"
 };
