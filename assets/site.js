@@ -247,6 +247,9 @@
     if(bottleRenderer&&bottleScene&&bottleCamera)bottleRenderer.render(bottleScene,bottleCamera);
   }
   function destroyBottle3D() {
+    const oldStage=$('#model3d');
+    oldStage?._bottleResizeObserver?.disconnect();
+    if(oldStage) oldStage._bottleResizeObserver=null;
     if(bottleRenderer){
       bottleRenderer.dispose();
       bottleRenderer.forceContextLoss?.();
