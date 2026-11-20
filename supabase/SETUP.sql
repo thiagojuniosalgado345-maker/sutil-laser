@@ -89,12 +89,18 @@ using (public.is_sutil_admin());
 create table if not exists public.store_settings (
   id smallint primary key default 1 check (id = 1),
   store_name text not null default 'Sútil Laser',
+  brand_mark text not null default 'S·L',
+  brand_logo_url text,
+  accent_color text not null default '#a98656',
   tagline text not null default 'Personalizados com significado',
   instagram_url text,
   whatsapp_number text,
   contact_email text,
   updated_at timestamptz not null default now()
 );
+alter table public.store_settings add column if not exists brand_mark text not null default 'S·L';
+alter table public.store_settings add column if not exists brand_logo_url text;
+alter table public.store_settings add column if not exists accent_color text not null default '#a98656';
 alter table public.store_settings enable row level security;
 
 drop policy if exists "Public can view store settings" on public.store_settings;
