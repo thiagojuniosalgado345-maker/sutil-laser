@@ -1,5 +1,5 @@
 # Sútil Laser
 
-Site da Sútil Laser — catálogo de produtos personalizados, personalizador com prévia 3D e painel administrativo.
+Site independente da Sútil Laser, com catálogo, prévia de personalização 3D e painel de gestão gravando os dados e as fotos diretamente neste repositório GitHub — sem banco externo.
 
-Consulte o guia completo em [`README_PT.md`](README_PT.md) para testar, configurar o Supabase e publicar no GitHub Pages.
+Consulte [`README_PT.md`](README_PT.md) antes de publicar e criar o token de administração.
