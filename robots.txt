@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+
+Sitemap: https://thiagojuniosalgado345-maker.github.io/sutil-laser/sitemap.xml
