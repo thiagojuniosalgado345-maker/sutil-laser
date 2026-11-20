@@ -109,7 +109,9 @@ Para uma transferência profissional, o comprador deve receber controle de **tod
 3. Faça uma exportação/importação dos produtos e arquivos de imagem, ou recadastre-os pelo painel. Confirme se todas as fotos continuam acessíveis após a transferência.
 4. Transfira o domínio e configure os DNS na conta do comprador, caso exista domínio próprio.
 5. Atualize os dados de marca e contato no painel. Instagram, WhatsApp, e-mail e demais contas da empresa são ativos separados e precisam ser transferidos pelo proprietário.
-6. Remova acessos de ex-prestadores e revogue chaves antigas depois de testar o novo ambiente.
+6. Atualize as URLs em `robots.txt` e `sitemap.xml` quando o repositório mudar de proprietário ou receber domínio próprio.
+7. Remova acessos de ex-prestadores e revogue chaves antigas depois de testar o novo ambiente.
+
 
 A venda não deve depender de uma conta pessoal do desenvolvedor, de token GitHub particular ou de uma chave `service_role` embutida no site. Guarde também uma cópia de segurança do banco e das imagens no momento da entrega.
 
