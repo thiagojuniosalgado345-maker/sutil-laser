@@ -12,6 +12,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="assets/site.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
   <div class="announcement" id="announcement">Personalizados com intenção · presentes que ficam</div>
@@ -130,8 +138,8 @@
           <img id="previewImage" alt="Foto do produto selecionado" hidden>
           <div class="stage-placeholder" id="stagePlaceholder">Sútil</div>
           <div class="model-3d-stage" id="model3d" hidden></div>
-          <div class="model-3d-controls"><button type="button" id="modelRotateLeft" aria-label="Girar modelo para a esquerda">↶</button><span>VISÃO 3D</span><button type="button" id="modelRotateRight" aria-label="Girar modelo para a direita">↷</button></div>
-          <div class="engraving-overlay" id="engravingOverlay"><img id="logoPreview" alt="" hidden><span id="textPreview">Seu nome</span></div>
+          <div class="model-3d-controls" id="model3dControls" hidden><button type="button" id="modelRotateLeft" aria-label="Girar modelo para a esquerda">↶</button><span>VISÃO 3D</span><button type="button" id="modelRotateRight" aria-label="Girar modelo para a direita">↷</button></div>
+          <div class="engraving-overlay" id="engravingOverlay"><img id="logoPreview" alt="" hidden><span id="textPreview"></span></div>
           <div class="preview-disclaimer">Prévia de composição · não representa prova técnica de gravação</div>
         </div>
       </div>
@@ -139,15 +147,15 @@
         <span class="eyebrow">Imagine sua personalização</span>
         <h2 id="modalTitle">Personalize sua peça</h2>
         <p>Use os controles para montar uma referência. A equipe confirma a viabilidade e a arte final com você.</p>
-        <div class="field" id="textField"><label for="customText">Nome ou mensagem</label><input id="customText" maxlength="50" placeholder="Ex.: Ana Paula"></div>
-        <div class="field" id="logoField"><label for="customLogo">Imagem ou logo (opcional)</label><input id="customLogo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"><small class="tiny-note">A imagem é usada apenas nesta prévia e não é enviada automaticamente. Anexe o arquivo no atendimento.</small></div>
+        <div class="field" id="textField"><label for="customText">Nome ou mensagem</label><input id="customText" maxlength="50" placeholder="Digite um nome ou mensagem"></div>
+        <div class="field" id="logoField"><label for="customLogo">Imagem ou logo (opcional)</label><input id="customLogo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"><button class="text-button" id="clearCustomLogo" type="button">Remover logo</button><small class="tiny-note">A imagem aparece na prévia 3D; para o pedido, o arquivo também precisa ser enviado no atendimento.</small></div>
         <div class="control-row">
           <div class="field" id="fontField"><label for="customFont">Estilo da letra</label><select id="customFont"><option value="serif">Clássica</option><option value="sans">Minimalista</option><option value="script">Manuscrita</option></select></div>
-          <div class="field" id="colorField"><label for="customColor">Tom da gravação</label><select id="customColor"><option value="#a98656">Dourado</option><option value="#343a34">Escuro</option><option value="#f4f0e7">Claro</option></select></div>
+          <div class="field" id="colorField"><label for="customColor">Tom da gravação</label><select id="customColor"><option value="#d7d9d5">Aço claro</option><option value="#d6bd8d">Champagne</option><option value="#3c4355">Grafite</option></select></div>
         </div>
-        <div class="field" id="sizeField"><label for="customSize">Tamanho ilustrativo</label><input id="customSize" type="range" min="12" max="38" value="23"><div class="range-meta"><span>Menor</span><span>Maior</span></div></div>
+        <div class="field" id="sizeField"><label for="customSize">Tamanho da gravação</label><input id="customSize" type="range" min="12" max="38" value="23"><div class="range-meta"><span>Menor</span><span>Maior</span></div></div>
         <div class="field" id="positionField"><label for="customPosition">Altura da composição</label><input id="customPosition" type="range" min="20" max="80" value="52"><div class="range-meta"><span>Mais acima</span><span>Mais abaixo</span></div></div><div class="field" id="positionXField"><label for="customPositionX">Posição horizontal</label><input id="customPositionX" type="range" min="15" max="85" value="50"><div class="range-meta"><span>Esquerda</span><span>Direita</span></div></div><div class="field"><label for="customQuantity">Quantidade desejada</label><input id="customQuantity" type="number" min="1" max="999" value="1"></div>
-        <button class="button modal-submit" id="requestButton">Adicionar à minha seleção ＋</button>
+        <div class="custom-actions"><button class="button secondary reset-personalization" id="resetPersonalization" type="button">Limpar personalização</button><button class="button modal-submit" id="requestButton">Adicionar à minha seleção ＋</button></div>
         <div class="tiny-note">Antes de confirmar, solicite o valor, a disponibilidade, o prazo e a aprovação da arte final. Se anexar uma logo, envie o arquivo também pelo canal de atendimento.</div>
       </div>
     </div>
@@ -157,7 +165,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="assets/site.js" defer></script>
+  <script type="module" src="assets/site.js"></script>
 </body>
 </html>
