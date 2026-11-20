@@ -9,7 +9,7 @@ OUT = os.path.join(ROOT, 'assets', 'models', 'garrafa-termica-azul.glb')
 TEXTURE_DIR = os.path.join(ROOT, 'assets', 'models', 'textures')
 os.makedirs(TEXTURE_DIR, exist_ok=True)
 rng = np.random.default_rng(20261120)
-W, H = 2048, 1024
+W, H = 1024, 512
 SECTIONS = 256
 
 
@@ -48,25 +48,25 @@ def tangent_normal(height, strength=2.0):
 u = np.linspace(0, 1, W, dtype=np.float32)[None, :]
 v = np.linspace(0, 1, H, dtype=np.float32)[:, None]
 grain = rng.normal(0, 1.8, (H, W)).astype(np.float32)
-powder_height = (0.30 * np.sin(u * 2 * np.pi * 840) +
-                 0.13 * np.sin(u * 2 * np.pi * 1470 + v * 8) +
+powder_height = (0.30 * np.sin(u * 2 * np.pi * 420) +
+                 0.13 * np.sin(u * 2 * np.pi * 735 + v * 8) +
                  rng.normal(0, 0.18, (H, W))).astype(np.float32)
 blue = np.zeros((H, W, 3), dtype=np.float32)
 blue[:, :, 0] = 35 + 1.2 * np.cos(u * 2 * np.pi) + grain * 0.58
 blue[:, :, 1] = 51 + 1.4 * np.cos(u * 2 * np.pi) + grain * 0.70
 blue[:, :, 2] = 137 + 2.0 * np.cos(u * 2 * np.pi) + grain
-blue_img = save_texture('blue-powdercoat.jpg', blue, quality=95)
-blue_normal = save_texture('blue-powdercoat-normal.jpg', tangent_normal(powder_height, 0.55), quality=96)
+blue_img = save_texture('blue-powdercoat.jpg', blue, quality=92)
+blue_normal = save_texture('blue-powdercoat-normal.jpg', tangent_normal(powder_height, 0.55), quality=92)
 blue_rough = np.zeros((H, W, 3), dtype=np.uint8)
 blue_rough[:, :, 0] = 255
 blue_rough[:, :, 1] = np.clip(158 + rng.normal(0, 4, (H, W)), 145, 170).astype(np.uint8)
 blue_rough[:, :, 2] = 38
-blue_mr = save_texture('blue-powdercoat-mr.jpg', blue_rough, quality=97)
+blue_mr = save_texture('blue-powdercoat-mr.jpg', blue_rough, quality=94)
 
 # Aço escovado: reflexo longitudinal (riscos muito finos e longos), sem parecer cromado.
-line_field = (1.4 * np.sin(u * 2 * np.pi * 880) +
-              0.65 * np.sin(u * 2 * np.pi * 1490 + 0.2) +
-              0.35 * np.sin(u * 2 * np.pi * 2310 + v * 2.2))
+line_field = (1.4 * np.sin(u * 2 * np.pi * 440) +
+              0.65 * np.sin(u * 2 * np.pi * 745 + 0.2) +
+              0.35 * np.sin(u * 2 * np.pi * 1155 + v * 2.2))
 steel_noise = rng.normal(0, 0.8, (H, W))
 steel = np.zeros((H, W, 3), dtype=np.float32)
 steel[:, :, 0] = 173 + line_field + steel_noise
