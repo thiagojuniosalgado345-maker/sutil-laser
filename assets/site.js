@@ -15,6 +15,10 @@
   let selectedProduct = null;
   let quoteItems = [];
   let logoObjectUrl = null;
+  let modelRotation = 0;
+  let modelTilt = -5;
+  let draggingModel = false;
+  let dragStart = null;
 
   function toast(message) {
     const el = $('#toast');
@@ -144,6 +148,29 @@
     const element = $('#' + field);
     if (element) element.hidden = !enabled;
   }
+
+  function resolveModelType(product) {
+    const explicit = String(product.model_type || product.model || '').toLowerCase();
+    if (['cup','bottle','goblet'].includes(explicit)) return explicit;
+    const name = String(product.name || '').toLocaleLowerCase('pt-BR');
+    if (/garrafa|squeeze/.test(name)) return 'bottle';
+    if (/taça|taca|cuia/.test(name)) return 'goblet';
+    if (/copo|caneca/.test(name)) return 'cup';
+    return 'other';
+  }
+  function build3DModel(type) {
+    const shape = type === 'bottle' ? 'model-bottle' : type === 'goblet' ? 'model-goblet' : 'model-cup';
+    return '<div class="model-3d-shadow"></div><div class="model-3d-object '+shape+'" id="modelObject" aria-label="Modelo tridimensional ilustrativo do produto"><div class="model-back"></div><div class="model-side"></div><div class="model-front"><div class="model-rim"></div><div class="model-engraving" id="modelEngraving">Seu nome</div><div class="model-base"></div></div></div><div class="model-3d-hint">Arraste para girar · prévia ilustrativa</div>';
+  }
+  function update3DModel() {
+    const object = $('#modelObject');
+    if (object) object.style.transform = 'translate(-50%,-50%) rotateX('+modelTilt+'deg) rotateY('+modelRotation+'deg)';
+  }
+  function rotateModelBy(delta) {
+    modelRotation = (modelRotation + delta) % 360;
+    update3DModel();
+  }
+
   function openCustomizer(product) {
     selectedProduct = product;
     $('#modalTitle').textContent = product.name;
@@ -164,13 +191,25 @@
     $('#customQuantity').value = '1';
     const image = product.image_url || (Array.isArray(product.gallery) && product.gallery[0]) || '';
     const previewImage = $('#previewImage');
+    const modelType = resolveModelType(product);
+    const modelStage = $('#model3d');
+    const use3D = !image && modelType !== 'other';
+    modelStage.hidden = !use3D;
+    previewImage.hidden = !image;
+    if (use3D) {
+      modelStage.dataset.type = modelType;
+      modelStage.innerHTML = build3DModel(modelType);
+      modelRotation = -18; modelTilt = -5;
+      update3DModel();
+      $('#stagePlaceholder').hidden = true;
+    }
     previewImage.onload = () => { previewImage.hidden = false; $('#stagePlaceholder').hidden = true; };
     previewImage.onerror = () => { previewImage.hidden = true; $('#stagePlaceholder').hidden = false; };
-    previewImage.hidden = !image;
     if (image) previewImage.src = image; else previewImage.removeAttribute('src');
-    $('#stagePlaceholder').hidden = !!image;
+    if (!use3D) $('#stagePlaceholder').hidden = !!image;
     $('#engravingOverlay').style.top = '52%';
     $('#engravingOverlay').style.left = '50%';
+    $('#engravingOverlay').classList.toggle('on-3d-model', use3D);
     fieldVisible('textField','text');
     fieldVisible('logoField','logo');
     fieldVisible('fontField','font');
@@ -199,6 +238,16 @@
     el.style.color = $('#customColor').value;
     $('#engravingOverlay').style.top = $('#customPosition').value + '%';
     $('#engravingOverlay').style.left = $('#customPositionX').value + '%';
+    const modelText = $('#model3d .model-engraving');
+    if (modelText) {
+      modelText.textContent = text || 'Seu nome';
+      modelText.style.fontFamily = font==='sans' ? 'var(--sans)' : font==='script' ? 'cursive' : 'var(--serif)';
+      modelText.style.fontSize = Math.max(10,Number($('#customSize').value)*.72)+'px';
+      modelText.style.color = $('#customColor').value;
+      modelText.style.top = $('#customPosition').value+'%';
+      modelText.style.left = $('#customPositionX').value+'%';
+    }
+    update3DModel();
   }
   function addToQuote() {
     if (!selectedProduct) return;
@@ -312,6 +361,11 @@
     if (product) openCustomizer(product);
   });
   $('#customText').addEventListener('input',updatePreview);
+  $('#modelRotateLeft').addEventListener('click',()=>rotateModelBy(-25));
+  $('#modelRotateRight').addEventListener('click',()=>rotateModelBy(25));
+  $('#model3d').addEventListener('pointerdown',event=>{if(!$('#modelObject'))return;draggingModel=true;dragStart={x:event.clientX,y:event.clientY,rotation:modelRotation,tilt:modelTilt};$('#model3d').setPointerCapture(event.pointerId);});
+  $('#model3d').addEventListener('pointermove',event=>{if(!draggingModel||!dragStart)return;modelRotation=dragStart.rotation+(event.clientX-dragStart.x)*.8;modelTilt=Math.max(-22,Math.min(18,dragStart.tilt-(event.clientY-dragStart.y)*.35));update3DModel();});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>$('#model3d').addEventListener(type,()=>{draggingModel=false;dragStart=null;}));
   ['customFont','customColor','customSize','customPosition','customPositionX'].forEach(id => $('#'+id).addEventListener('input',updatePreview));
   $('#customQuantity').addEventListener('change',event => {
     const value=Math.min(999,Math.max(1,Number.parseInt(event.target.value,10)||1));
