@@ -71,3 +71,24 @@
 .model-3d-controls button{border-radius:2px;cursor:pointer;transition:background .2s,color .2s}
 .model-3d-controls button:hover{background:#343a34;color:white}
 @media(max-width:760px){.model-3d-stage.bottle-stage{min-height:290px}.bottle-3d-hint{bottom:10px}}
+
+
+/* Visualizador real da garrafa: WebGL2, modelo PBR e personalização mapeada no corpo. */
+.model-3d-stage{position:absolute;inset:0;z-index:2;display:block;overflow:hidden;background:radial-gradient(ellipse at 50% 34%,#faf7ef 0%,#ece7dc 64%,#d9d2c5 100%);touch-action:none}
+.model-3d-stage[hidden],.model-3d-controls[hidden],#previewImage[hidden],.photo-stage>img[hidden],.engraving-overlay img[hidden],.bottle-3d-loading[hidden]{display:none!important}
+.bottle-3d-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;outline:0;touch-action:none;cursor:grab}
+.bottle-3d-canvas:active{cursor:grabbing}
+.bottle-3d-loading{position:absolute;z-index:3;left:0;right:0;bottom:18px;text-align:center;color:#6f716b;font-size:9px;letter-spacing:.13em;text-transform:uppercase;pointer-events:none}
+.model-3d-controls{z-index:5;box-shadow:0 8px 24px #30291b17;border-radius:3px}
+.model-3d-controls button{border-radius:2px;cursor:pointer;transition:background .18s,color .18s}
+.model-3d-controls button:hover,.model-3d-controls button:focus-visible{background:#343a34;color:#fff}
+.engraving-overlay.on-3d-model{display:none!important}
+.text-button{justify-self:start;border:0;background:transparent;color:#7f694a;padding:2px 0;text-decoration:underline;text-underline-offset:3px;font-size:10px}
+.custom-actions{display:grid;gap:9px;margin-top:12px}
+.custom-actions .modal-submit{margin-top:0}
+.reset-personalization{width:100%;min-height:43px;font-size:9px}
+@media(max-width:760px){
+  .model-3d-stage{min-height:290px}
+  .bottle-3d-loading{bottom:12px}
+  .model-3d-controls{top:8px;gap:8px}
+}
