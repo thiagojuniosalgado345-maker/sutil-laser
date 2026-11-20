@@ -27,6 +27,7 @@ $$;
 revoke all on function public.is_sutil_admin() from public;
 grant execute on function public.is_sutil_admin() to anon, authenticated;
 
+drop policy if exists "Users can read their own role" on public.user_roles;
 drop policy if exists "Admin can read own role" on public.user_roles;
 create policy "Admin can read own role"
 on public.user_roles for select
@@ -53,10 +54,12 @@ create table if not exists public.products (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+alter table public.products add column if not exists short_description text not null default '';
 create index if not exists products_active_sort_idx
 on public.products (active, sort_order, created_at desc);
 alter table public.products enable row level security;
 
+drop policy if exists "Public can view active products" on public.products;
 drop policy if exists "Public can view active products and admins all" on public.products;
 create policy "Public can view active products and admins all"
 on public.products for select
@@ -149,6 +152,7 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
+drop policy if exists "Public can view product images" on storage.objects;
 drop policy if exists "Anyone can view product images" on storage.objects;
 create policy "Anyone can view product images"
 on storage.objects for select
