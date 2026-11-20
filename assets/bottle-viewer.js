@@ -49,12 +49,16 @@ function drawEngraving(context, customization) {
   context.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
   const text = String(customization.text || '').trim();
   const logo = customization.logoImage || null;
-  if (!text && !(logo && logo.complete && logo.naturalWidth > 0)) return;
+  const hasLogo = Boolean(logo && logo.complete && logo.naturalWidth > 0);
+  if (!text && !hasLogo) return;
 
   const xPercent = clamp(Number(customization.positionX ?? 50), 0, 100);
   const yPercent = clamp(Number(customization.positionY ?? 52), 0, 100);
+  // A escala horizontal percorre apenas a face frontal útil, sem deixar o texto
+  // desaparecer para trás da parede cilíndrica quando o usuário desloca o slider.
   const x = TEXTURE_WIDTH * (0.5 + ((xPercent - 50) / 100) * 0.42);
-  const y = TEXTURE_HEIGHT * (1 - yPercent / 100);
+  // O slider começa em "mais acima"; por isso o y da tela segue a mesma direção.
+  const desiredCenterY = TEXTURE_HEIGHT * yPercent / 100;
   const size = clamp(Number(customization.size ?? 23), 12, 38);
   const fontSize = clamp(Math.round(size * 3.85), 46, 150);
   const fontChoice = customization.font || 'serif';
@@ -66,40 +70,61 @@ function drawEngraving(context, customization) {
   const requestedColor = /^#[0-9a-f]{6}$/i.test(customization.color || '')
     ? customization.color
     : '#d7d9d5';
-
   const maxWidth = TEXTURE_WIDTH * 0.30;
-  let cursorY = y;
 
-  if (logo && logo.complete && logo.naturalWidth > 0) {
+  let lines = [];
+  let lineHeight = fontSize * 1.15;
+  let textHeight = 0;
+  if (text) {
+    context.save();
+    context.font = '600 ' + fontSize + 'px ' + family;
+    lines = wrapText(context, text, maxWidth, 3);
+    textHeight = lines.length * lineHeight;
+    context.restore();
+  }
+
+  let logoWidth = 0;
+  let logoHeight = 0;
+  if (hasLogo) {
     const scale = (size - 12) / 26;
     const maxLogoWidth = 140 + scale * 350;
     const maxLogoHeight = 80 + scale * 170;
     const ratio = Math.min(maxLogoWidth / logo.naturalWidth, maxLogoHeight / logo.naturalHeight);
-    const logoWidth = logo.naturalWidth * ratio;
-    const logoHeight = logo.naturalHeight * ratio;
-    const logoY = text ? y - logoHeight * 0.72 : y;
+    logoWidth = logo.naturalWidth * ratio;
+    logoHeight = logo.naturalHeight * ratio;
+  }
+
+  const gap = hasLogo && text ? Math.max(22, fontSize * 0.48) : 0;
+  const totalHeight = textHeight + (hasLogo ? logoHeight : 0) + gap;
+  const centerY = clamp(desiredCenterY, totalHeight / 2 + 8, TEXTURE_HEIGHT - totalHeight / 2 - 8);
+  const blockTop = centerY - totalHeight / 2;
+  let firstTextY = null;
+
+  if (hasLogo) {
+    const logoY = text
+      ? blockTop + logoHeight / 2
+      : centerY;
     context.save();
     context.globalAlpha = 0.96;
     context.shadowColor = 'rgba(5, 12, 38, 0.22)';
     context.shadowBlur = 3;
     context.drawImage(logo, x - logoWidth / 2, logoY - logoHeight / 2, logoWidth, logoHeight);
     context.restore();
-    if (text) cursorY = y + fontSize * 1.18;
+    if (text) firstTextY = blockTop + logoHeight + gap + lineHeight / 2;
+  } else if (text) {
+    firstTextY = blockTop + lineHeight / 2;
   }
 
-  if (text) {
+  if (text && firstTextY !== null) {
     context.save();
     context.font = '600 ' + fontSize + 'px ' + family;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.lineJoin = 'round';
-    const lines = wrapText(context, text, maxWidth, 3);
-    const lineHeight = fontSize * 1.15;
-    const firstY = cursorY - ((lines.length - 1) * lineHeight) / 2;
 
     for (let index = 0; index < lines.length; index += 1) {
       const line = lines[index];
-      const lineY = firstY + index * lineHeight;
+      const lineY = firstTextY + index * lineHeight;
       const metalGradient = context.createLinearGradient(0, lineY - fontSize / 2, 0, lineY + fontSize / 2);
       metalGradient.addColorStop(0, requestedColor);
       metalGradient.addColorStop(0.48, requestedColor);
