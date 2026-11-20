@@ -210,7 +210,7 @@
     };
   }
   function build3DModel() {
-    return '<canvas id="bottle3dCanvas" class="bottle-3d-canvas" aria-label="Modelo tridimensional interativo da garrafa térmica azul"></canvas><div class="bottle-3d-loading" id="bottle3dLoading">Preparando o modelo 3D…</div>';
+    return '<canvas id="bottle3dCanvas" class="bottle-3d-canvas" aria-label="Garrafa térmica 3D. Arraste para girar e use pinça para aproximar"></canvas><div class="bottle-3d-loading" id="bottle3dLoading">Preparando o modelo 3D…</div><div class="bottle-3d-hint">Arraste para girar · pinça para aproximar · 360°</div>';
   }
   function destroyBottle3D() {
     bottleViewerGeneration += 1;
@@ -249,6 +249,7 @@
     }
   }
   function rotateModelBy(degrees) { bottleViewer?.rotateBy(degrees); }
+  function resetModelView() { bottleViewer?.resetView(); }
   function update3DModel() {
     if (!bottleViewer) return;
     bottleViewer.update(currentBottleCustomization());
@@ -462,6 +463,7 @@
   });
   $('#modelRotateLeft').addEventListener('click',()=>rotateModelBy(-30));
   $('#modelRotateRight').addEventListener('click',()=>rotateModelBy(30));
+  $('#modelViewReset').addEventListener('click',resetModelView);
   $('#clearCustomLogo').addEventListener('click',clearCustomLogo);
   $('#resetPersonalization').addEventListener('click',resetPersonalization);
   ['customFont','customColor','customSize','customPosition','customPositionX'].forEach(id => $('#'+id).addEventListener('input',updatePreview));
