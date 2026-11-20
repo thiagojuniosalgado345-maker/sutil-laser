@@ -34,6 +34,12 @@
   function displaySettings() {
     const name = settings.store_name || 'Sútil Laser';
     document.title = name + ' | Personalizados com significado';
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content',name+' | Personalizados com significado');
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content',settings.tagline || 'Peças e presentes personalizados.');
+    $('#heroIndex').textContent = 'COLEÇÃO · '+name.toLocaleUpperCase('pt-BR');
+    $('#heroPlaceholderMark').textContent = settings.brand_mark || 'S';
+    $('#storyVisual').dataset.brand = settings.brand_mark || 'S·L';
+    $('#stagePlaceholder').textContent = settings.brand_mark || 'Sútil';
     document.querySelectorAll('.brand-name').forEach(el => { el.textContent = name.toLocaleUpperCase('pt-BR'); });
     $('#footerStore').textContent = name;
     document.querySelectorAll('.brand-mark').forEach(mark => {
