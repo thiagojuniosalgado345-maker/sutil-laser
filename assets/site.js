@@ -10,7 +10,7 @@
     && typeof config.anonKey === 'string' && config.anonKey.length > 20 && !config.anonKey.startsWith('COLE_');
   const client = configured && window.supabase?.createClient ? window.supabase.createClient(config.url, config.anonKey) : null;
   let products = [];
-  let settings = {store_name:'Sútil Laser',tagline:'Personalizados com significado',instagram_url:'https://www.instagram.com/sutillaser/',whatsapp_number:'',contact_email:''};
+  let settings = {store_name:'Sútil Laser',brand_mark:'S·L',brand_logo_url:'',accent_color:'#a98656',tagline:'Personalizados com significado',instagram_url:'https://www.instagram.com/sutillaser/',whatsapp_number:'',contact_email:''};
   let activeCategory = 'Todos';
   let selectedProduct = null;
   let logoObjectUrl = null;
@@ -34,6 +34,12 @@
     document.title = name + ' | Personalizados com significado';
     $('#brandName').textContent = name.toLocaleUpperCase('pt-BR');
     $('#footerStore').textContent = name;
+    document.querySelectorAll('.brand-mark').forEach(mark => {
+      const logo = validExternalUrl(settings.brand_logo_url, '');
+      if (logo) mark.innerHTML = '<img src="'+escapeHtml(logo)+'" alt="'+escapeHtml(name)+'">';
+      else mark.textContent = settings.brand_mark || 'S·L';
+    });
+    if (/^#[0-9a-f]{6}$/i.test(settings.accent_color || '')) document.documentElement.style.setProperty('--gold', settings.accent_color);
     $('#heroDescription').textContent = settings.tagline || 'Personalizamos peças e presentes com gravação a laser, transformando ideias em lembranças com significado.';
     const insta = validExternalUrl(settings.instagram_url, 'https://www.instagram.com/');
     $('#footerInstagram').href = insta;
