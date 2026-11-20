@@ -1,0 +1,50 @@
+name: Test bottle 3D viewer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/site.js'
+      - 'assets/bottle-viewer.js'
+      - 'assets/models/**'
+      - 'index.html'
+      - 'scripts/test-bottle-viewer.mjs'
+      - '.github/workflows/test-bottle-viewer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium-webgl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Start local storefront
+        run: |
+          python -m http.server 4173 > /tmp/sutil-http.log 2>&1 &
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:4173/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/sutil-http.log
+          exit 1
+      - name: Test 3D model and live customization
+        run: node scripts/test-bottle-viewer.mjs
+      - name: Upload 3D test screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bottle-3d-browser-test
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
