@@ -33,7 +33,7 @@
   function displaySettings() {
     const name = settings.store_name || 'Sútil Laser';
     document.title = name + ' | Personalizados com significado';
-    $('#brandName').textContent = name.toLocaleUpperCase('pt-BR');
+    document.querySelectorAll('.brand-name').forEach(el => { el.textContent = name.toLocaleUpperCase('pt-BR'); });
     $('#footerStore').textContent = name;
     document.querySelectorAll('.brand-mark').forEach(mark => {
       const logo = validExternalUrl(settings.brand_logo_url, '');
