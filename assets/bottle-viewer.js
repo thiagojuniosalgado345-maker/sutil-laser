@@ -224,16 +224,19 @@ export async function createBottleViewer(stage, options = {}) {
   let animationActive = false;
 
   try {
+    const mobileCanvas = window.matchMedia?.('(max-width: 760px)').matches || false;
     renderer = new THREE.WebGLRenderer({
-      canvas, alpha: false, antialias: true, powerPreference: 'high-performance',
-      depth: true, stencil: false
+      canvas, alpha: false, antialias: !mobileCanvas, powerPreference: 'default',
+      depth: true, stencil: false, precision: 'mediump'
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobileCanvas ? 1.5 : 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.12;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // A sombra de contato é pré-calculada; sombras dinâmicas são opcionais para
+    // evitar falhas/alto consumo em GPUs móveis e WebViews iOS.
+    renderer.shadowMap.enabled = !mobileCanvas;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
 
     const width = Math.max(1, stage.clientWidth);
     const height = Math.max(1, stage.clientHeight);
@@ -243,13 +246,24 @@ export async function createBottleViewer(stage, options = {}) {
     scene.background = new THREE.Color(0xe9e4d9);
     scene.environmentIntensity = 1.18;
 
-    pmremGenerator = new THREE.PMREMGenerator(renderer);
-    const room = new RoomEnvironment();
-    environmentTarget = pmremGenerator.fromScene(room, 0.035);
-    scene.environment = environmentTarget.texture;
-    room.dispose?.();
-    pmremGenerator.dispose();
-    pmremGenerator = null;
+    // O mapa de ambiente melhora muito o aço, mas é um recurso opcional:
+    // se o dispositivo não conseguir gerar PMREM, a iluminação direta mantém
+    // o modelo utilizável em vez de abortar toda a inicialização.
+    try {
+      pmremGenerator = new THREE.PMREMGenerator(renderer);
+      const room = new RoomEnvironment();
+      environmentTarget = pmremGenerator.fromScene(room, 0.035);
+      scene.environment = environmentTarget.texture;
+      room.dispose?.();
+      pmremGenerator.dispose();
+      pmremGenerator = null;
+    } catch (environmentError) {
+      console.warn('Ambiente PBR avançado indisponível; usando iluminação direta:', environmentError);
+      pmremGenerator?.dispose();
+      pmremGenerator = null;
+      environmentTarget = null;
+      scene.environment = null;
+    }
 
     const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 100);
     camera.position.set(2.15, 2.62, 7.7);
