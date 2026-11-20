@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
 const SEGMENTS = 160;
 const TEXTURE_WIDTH = 2048;
@@ -60,7 +61,7 @@ function drawEngraving(context, customization) {
   // O slider começa em "mais acima"; por isso o y da tela segue a mesma direção.
   const desiredCenterY = TEXTURE_HEIGHT * yPercent / 100;
   const size = clamp(Number(customization.size ?? 23), 12, 38);
-  const fontSize = clamp(Math.round(size * 3.85), 46, 150);
+  const fontSize = clamp(Math.round(size * 5.2), 62, 198);
   const fontChoice = customization.font || 'serif';
   const family = fontChoice === 'sans'
     ? 'Manrope, Arial, sans-serif'
@@ -70,7 +71,7 @@ function drawEngraving(context, customization) {
   const requestedColor = /^#[0-9a-f]{6}$/i.test(customization.color || '')
     ? customization.color
     : '#d7d9d5';
-  const maxWidth = TEXTURE_WIDTH * 0.30;
+  const maxWidth = TEXTURE_WIDTH * 0.62;
 
   let lines = [];
   let lineHeight = fontSize * 1.15;
@@ -87,8 +88,8 @@ function drawEngraving(context, customization) {
   let logoHeight = 0;
   if (hasLogo) {
     const scale = (size - 12) / 26;
-    const maxLogoWidth = 140 + scale * 350;
-    const maxLogoHeight = 80 + scale * 170;
+    const maxLogoWidth = 260 + scale * 520;
+    const maxLogoHeight = 140 + scale * 260;
     const ratio = Math.min(maxLogoWidth / logo.naturalWidth, maxLogoHeight / logo.naturalHeight);
     logoWidth = logo.naturalWidth * ratio;
     logoHeight = logo.naturalHeight * ratio;
@@ -146,9 +147,9 @@ function drawEngraving(context, customization) {
 }
 
 const BOTTLE_BODY_PROFILE = [
-  [0.535, 0.775], [0.555, 0.765], [0.61, 0.778], [0.73, 0.792],
-  [0.98, 0.815], [1.38, 0.855], [1.85, 0.902], [2.29, 0.949],
-  [2.52, 0.976], [2.61, 0.982], [2.66, 0.981]
+  [0.505, 0.755], [0.525, 0.758], [0.565, 0.768], [0.635, 0.780],
+  [0.765, 0.795], [1.02, 0.823], [1.43, 0.862], [1.88, 0.910],
+  [2.33, 0.954], [2.66, 0.981], [2.88, 0.997], [2.955, 0.996]
 ];
 
 function bottleRadiusAt(height) {
@@ -168,10 +169,10 @@ function bottleRadiusAt(height) {
 function createFrontEngravingGeometry() {
   const columns = 112;
   const rows = 64;
-  const thetaStart = -0.88;
-  const thetaEnd = 0.88;
-  const yMin = 0.575;
-  const yMax = 2.615;
+  const thetaStart = -0.98;
+  const thetaEnd = 0.98;
+  const yMin = 0.565;
+  const yMax = 2.91;
   const positions = [];
   const uvs = [];
   const indices = [];
@@ -238,10 +239,10 @@ function makePersonalizationOverlay(bodyMesh, renderer) {
     alphaTest: 0.003,
     depthWrite: false,
     side: THREE.FrontSide,
-    metalness: 0.34,
-    roughness: 0.40,
-    clearcoat: 0.14,
-    clearcoatRoughness: 0.32,
+    metalness: 0.48,
+    roughness: 0.34,
+    clearcoat: 0.24,
+    clearcoatRoughness: 0.26,
     polygonOffset: true,
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1,
@@ -281,12 +282,10 @@ export async function createBottleViewer(stage, options = {}) {
       canvas, alpha: false, antialias: !mobileCanvas, powerPreference: 'default',
       depth: true, stencil: false, precision: 'mediump'
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobileCanvas ? 1.5 : 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobileCanvas ? 1.75 : 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
-    // A sombra de contato é pré-calculada; sombras dinâmicas são opcionais para
-    // evitar falhas/alto consumo em GPUs móveis e WebViews iOS.
+    renderer.toneMappingExposure = 1.06;
     renderer.shadowMap.enabled = !mobileCanvas;
     renderer.shadowMap.type = THREE.PCFShadowMap;
 
@@ -295,8 +294,9 @@ export async function createBottleViewer(stage, options = {}) {
     renderer.setSize(width, height, false);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xe9e4d9);
-    scene.environmentIntensity = 1.18;
+    const studioColor = 0xe9e4d9;
+    scene.background = new THREE.Color(studioColor);
+    scene.environmentIntensity = 1.32;
 
     // O mapa de ambiente melhora muito o aço, mas é um recurso opcional:
     // se o dispositivo não conseguir gerar PMREM, a iluminação direta mantém
@@ -320,26 +320,46 @@ export async function createBottleViewer(stage, options = {}) {
     const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 100);
     camera.position.set(2.15, 2.62, 7.7);
 
-    scene.add(new THREE.HemisphereLight(0xfff8ec, 0x343b55, 1.4));
-    const key = new THREE.DirectionalLight(0xfff2df, 3.35);
-    key.position.set(-4.2, 7.2, 5.5);
-    key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
+    scene.add(new THREE.HemisphereLight(0xfff8ed, 0x555365, 1.08));
+    const key = new THREE.DirectionalLight(0xfff2df, 2.15);
+    key.position.set(-4.5, 6.5, 5.0);
+    key.castShadow = !mobileCanvas;
+    key.shadow.mapSize.set(1536, 1536);
     key.shadow.camera.near = 0.1;
     key.shadow.camera.far = 18;
-    key.shadow.camera.left = -4;
-    key.shadow.camera.right = 4;
-    key.shadow.camera.top = 5;
-    key.shadow.camera.bottom = -2;
-    key.shadow.bias = -0.0002;
+    key.shadow.camera.left = -3.4;
+    key.shadow.camera.right = 3.4;
+    key.shadow.camera.top = 4.5;
+    key.shadow.camera.bottom = -1.8;
+    key.shadow.bias = -0.00018;
+    key.shadow.normalBias = 0.025;
     scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0xffffff, 1.55);
-    fill.position.set(5, 4, 3);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.85);
+    fill.position.set(4.5, 3.5, 4.0);
     scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xa8bbff, 1.5);
-    rim.position.set(-4, 3.7, -5);
+    const rim = new THREE.DirectionalLight(0xc8d5ff, 1.05);
+    rim.position.set(-3.5, 4.5, -4.5);
     scene.add(rim);
+
+    // Softboxes retangulares criam faixas de reflexão longas no inox e no verniz.
+    try {
+      RectAreaLightUniformsLib.init();
+      const softboxLeft = new THREE.RectAreaLight(0xfff4e8, mobileCanvas ? 2.0 : 2.8, 3.0, 5.2);
+      softboxLeft.position.set(-3.0, 3.4, 3.8);
+      softboxLeft.lookAt(0, 1.9, 0);
+      scene.add(softboxLeft);
+      const softboxRight = new THREE.RectAreaLight(0xffffff, mobileCanvas ? 1.1 : 1.6, 1.3, 4.4);
+      softboxRight.position.set(3.2, 2.7, 2.7);
+      softboxRight.lookAt(0, 1.8, 0);
+      scene.add(softboxRight);
+      const topSoftbox = new THREE.RectAreaLight(0xe6edff, 1.15, 3.8, 1.6);
+      topSoftbox.position.set(0, 5.7, -0.5);
+      topSoftbox.lookAt(0, 2.1, 0);
+      scene.add(topSoftbox);
+    } catch (areaLightError) {
+      console.warn('Softboxes indisponíveis; mantendo iluminação de estúdio direcional.', areaLightError);
+    }
 
     shadowTexture = makeContactShadow();
     const shadow = new THREE.Mesh(
@@ -352,12 +372,12 @@ export async function createBottleViewer(stage, options = {}) {
     scene.add(shadow);
 
     const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(200, 200),
-      new THREE.MeshStandardMaterial({ color: 0xe9e4d9, roughness: 0.96, metalness: 0 })
+      new THREE.PlaneGeometry(120, 120),
+      new THREE.MeshBasicMaterial({ color: studioColor, toneMapped: false })
     );
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = 0.005;
-    floor.receiveShadow = true;
+    floor.position.y = 0.004;
+    floor.renderOrder = 0;
     scene.add(floor);
 
     const loader = new GLTFLoader();
@@ -367,17 +387,46 @@ export async function createBottleViewer(stage, options = {}) {
     gltfScene = gltf.scene;
     gltfScene.traverse((object) => {
       if (!object.isMesh) return;
-      object.castShadow = true;
-      object.receiveShadow = true;
-      const materials = Array.isArray(object.material) ? object.material : [object.material];
-      materials.filter(Boolean).forEach((material) => {
-        material.envMapIntensity = 1.12;
-        ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap'].forEach((key) => {
+      object.castShadow = !mobileCanvas;
+      object.receiveShadow = !mobileCanvas;
+      const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
+      const upgraded = sourceMaterials.filter(Boolean).map((source) => {
+        const label = ((source.name || '') + ' ' + (object.name || '')).toLocaleLowerCase('pt-BR');
+        const steel = /inox|aço|escovado/.test(label);
+        const blue = /azul|corpo/.test(label);
+        const material = new THREE.MeshPhysicalMaterial({
+          name: source.name,
+          color: source.color ? source.color.clone() : new THREE.Color(0xffffff),
+          map: source.map || null,
+          normalMap: source.normalMap || null,
+          roughnessMap: source.roughnessMap || null,
+          metalnessMap: source.metalnessMap || null,
+          alphaMap: source.alphaMap || null,
+          transparent: source.transparent,
+          opacity: source.opacity,
+          side: source.side,
+          metalness: steel ? 0.94 : blue ? 0.16 : 0.10,
+          roughness: steel ? 0.27 : blue ? 0.42 : 0.30,
+          clearcoat: steel ? 0.18 : blue ? 0.28 : 0.36,
+          clearcoatRoughness: steel ? 0.24 : blue ? 0.48 : 0.23,
+          ior: 1.48,
+          anisotropy: steel ? 0.78 : 0.06,
+          anisotropyRotation: steel ? Math.PI / 2 : 0
+        });
+        material.envMapIntensity = steel ? 1.55 : blue ? 1.20 : 0.92;
+        if (material.normalScale) material.normalScale.set(steel ? 0.46 : 0.22, steel ? 1.0 : 0.35);
+        ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap'].forEach((key) => {
           const texture = material[key];
-          if (texture?.isTexture) texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+          if (texture?.isTexture) {
+            texture.anisotropy = Math.min(12, renderer.capabilities.getMaxAnisotropy());
+            texture.needsUpdate = true;
+          }
         });
         material.needsUpdate = true;
+        source.dispose?.();
+        return material;
       });
+      object.material = Array.isArray(object.material) ? upgraded : upgraded[0];
     });
     scene.add(gltfScene);
 
@@ -412,20 +461,27 @@ export async function createBottleViewer(stage, options = {}) {
 
     const bounds = new THREE.Box3().setFromObject(gltfScene);
     const center = bounds.getCenter(new THREE.Vector3());
+    const size = bounds.getSize(new THREE.Vector3());
+    const verticalSpan = size.y / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+    const horizontalSpan = size.x / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.max(0.5, camera.aspect));
+    const fitDistance = Math.max(verticalSpan, horizontalSpan) * 1.16;
+    const homePosition = center.clone().add(new THREE.Vector3(fitDistance * 0.16, size.y * 0.045, fitDistance));
+    camera.position.copy(homePosition);
     controls = new OrbitControls(camera, renderer.domElement);
     controls.target.copy(center);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.065;
+    controls.dampingFactor = 0.075;
     controls.enablePan = false;
     controls.enableRotate = true;
     controls.enableZoom = true;
     controls.zoomToCursor = true;
-    controls.rotateSpeed = 0.72;
-    controls.zoomSpeed = 0.75;
-    controls.minDistance = 4.3;
-    controls.maxDistance = 10.5;
-    controls.minPolarAngle = 0.18;
-    controls.maxPolarAngle = Math.PI - 0.18;
+    controls.rotateSpeed = 0.82;
+    controls.zoomSpeed = 0.78;
+    controls.minDistance = fitDistance * 0.58;
+    controls.maxDistance = fitDistance * 1.65;
+    controls.minPolarAngle = 0.15;
+    controls.maxPolarAngle = Math.PI - 0.15;
+    controls.screenSpacePanning = false;
     controls.update();
 
     personalization = makePersonalizationOverlay(bodyMesh, renderer);
@@ -470,6 +526,13 @@ export async function createBottleViewer(stage, options = {}) {
         const offset = camera.position.clone().sub(controls.target);
         offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(Number(degrees) || 0));
         camera.position.copy(controls.target).add(offset);
+        controls.update();
+        render();
+      },
+      resetView() {
+        if (disposed || !controls) return;
+        controls.target.copy(center);
+        camera.position.copy(homePosition);
         controls.update();
         render();
       },
