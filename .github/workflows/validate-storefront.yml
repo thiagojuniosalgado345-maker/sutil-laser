@@ -22,7 +22,8 @@ jobs:
           node-version: 20
       - name: Check JavaScript syntax
         run: |
-          node --check assets/site.js
+          node --input-type=module --check < assets/site.js
+          node --input-type=module --check < assets/bottle-viewer.js
           node --check assets/admin.js
           node --check config.js
       - name: Validate catalog JSON
@@ -32,5 +33,7 @@ jobs:
           test -f index.html
           test -f admin.html
           test -f assets/site.css
+          test -f assets/bottle-viewer.js
+          test -f assets/garrafa-azul-sem-nome.jpg
           test -f assets/admin.css
           test -f supabase/SETUP.sql
