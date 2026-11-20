@@ -270,7 +270,8 @@ export async function createBottleViewer(stage, options = {}) {
     scene.add(floor);
 
     const loader = new GLTFLoader();
-    const gltf = await loader.loadAsync(options.assetUrl || 'assets/models/garrafa-termica-azul.glb');
+    const modelUrl = options.assetUrl || new URL('assets/models/garrafa-termica-azul.glb', document.baseURI).href;
+    const gltf = await loader.loadAsync(modelUrl);
     if (disposed) throw new Error('Visualização encerrada durante o carregamento.');
     gltfScene = gltf.scene;
     gltfScene.traverse((object) => {
