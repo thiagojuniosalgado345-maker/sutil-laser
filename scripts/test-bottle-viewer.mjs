@@ -11,13 +11,13 @@ try {
   });
   page.on('requestfailed', request => errors.push('requestfailed: ' + request.url() + ' — ' + (request.failure()?.errorText || 'unknown')));
 
-  await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle', timeout: 60000 });
+  await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForSelector('#products [data-product]', { timeout: 30000 });
 
   const productCard = page.locator('.product-card').filter({ hasText: 'Garrafa térmica azul com tampa' }).first();
   await productCard.locator('[data-product]').click();
   await page.waitForSelector('#customModal.open', { timeout: 10000 });
-  await page.waitForFunction(() => ['ready', 'error'].includes(window.__SUTIL_3D_STATUS?.state), { timeout: 60000 });
+  await page.waitForFunction(() => ['ready', 'error'].includes(window.__SUTIL_3D_STATUS?.state), undefined, { timeout: 60000 });
 
   const status = await page.evaluate(() => window.__SUTIL_3D_STATUS);
   if (status.state !== 'ready') {
@@ -59,7 +59,7 @@ try {
     mimeType: 'image/svg+xml',
     buffer: Buffer.from(svg)
   });
-  await page.waitForFunction(() => window.__SUTIL_3D_STATUS?.state === 'editing', { timeout: 10000 });
+  await page.waitForFunction(() => window.__SUTIL_3D_STATUS?.state === 'editing' && window.__SUTIL_3D_STATUS?.updates >= 4, undefined, { timeout: 15000 });
   await page.locator('#modelRotateRight').click();
   await page.screenshot({ path: 'artifacts/bottle-3d-success.png', fullPage: true });
 
