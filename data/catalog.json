@@ -1,0 +1,125 @@
+[
+  {
+    "id": "copo-473",
+    "name": "Copo térmico 473 ml",
+    "category": "Copos térmicos",
+    "description": "Copo térmico em inox com tampa, ideal para acompanhar a rotina e receber gravação personalizada.",
+    "price": 34.5,
+    "price_label": "A partir de R$ 34,50 · confirmar variação",
+    "model": "cup",
+    "image": "https://down-br.img.susercontent.com/file/br-11134207-7r98o-m5k3pdbfzsmqc2",
+    "active": true,
+    "featured": true
+  },
+  {
+    "id": "taca-414",
+    "name": "Taça térmica Cocktail 414 ml",
+    "category": "Taças térmicas",
+    "description": "Taça térmica em inox para brindar momentos especiais.",
+    "price": 55.9,
+    "price_label": "A partir de R$ 55,90 · confirmar variação",
+    "model": "goblet",
+    "image": "https://down-br.img.susercontent.com/file/br-11134207-81z1k-membozbwdkap02",
+    "active": true,
+    "featured": true
+  },
+  {
+    "id": "garrafa-800",
+    "name": "Garrafa térmica 800 ml",
+    "category": "Garrafas",
+    "description": "Garrafa térmica com gravação a laser personalizada.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "bottle",
+    "image": "",
+    "active": true
+  },
+  {
+    "id": "garrafa-1000",
+    "name": "Garrafa térmica 1.000 ml",
+    "category": "Garrafas",
+    "description": "Garrafa térmica de maior capacidade, com gravação personalizada.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "bottle",
+    "image": "",
+    "active": true
+  },
+  {
+    "id": "copo-canudo-1200",
+    "name": "Copo com canudo 1.200 ml",
+    "category": "Copos térmicos",
+    "description": "Copo de grande capacidade para personalizar.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "cup",
+    "image": "",
+    "active": true
+  },
+  {
+    "id": "cuia-350",
+    "name": "Cuia 350 ml",
+    "category": "Acessórios",
+    "description": "Cuia personalizável para presentear.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "goblet",
+    "image": "",
+    "active": true
+  },
+  {
+    "id": "magsafe-802",
+    "name": "Garrafa MagSafe 802 ml",
+    "category": "Garrafas",
+    "description": "Modelo com suporte MagSafe e gravação personalizada.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "bottle",
+    "image": "",
+    "active": true
+  },
+  {
+    "id": "dindo-dinda",
+    "name": "Copo Dindo e Dinda 470 ml",
+    "category": "Presentes",
+    "description": "Lembrança personalizada para padrinhos e madrinhas.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "cup",
+    "image": "",
+    "active": true
+  },
+  {
+    "id": "kit-presentes",
+    "name": "Kit de presentes personalizado",
+    "category": "Kits",
+    "description": "Monte um presente especial com gravação a laser.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "cup",
+    "image": "",
+    "active": true
+  },
+  {
+    "id": "copo-alca",
+    "name": "Copo térmico com alça",
+    "category": "Copos térmicos",
+    "description": "Copo com alça e gravação personalizada.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "cup",
+    "image": "",
+    "active": true
+  },
+  {
+    "id": "kit-tacas",
+    "name": "Kit de taças personalizadas",
+    "category": "Kits",
+    "description": "Kit para comemorações com gravação a laser.",
+    "price": 0,
+    "price_label": "Consulte o valor",
+    "model": "goblet",
+    "image": "",
+    "active": true
+  }
+]
