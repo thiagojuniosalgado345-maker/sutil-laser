@@ -100,3 +100,8 @@
 .bottle-3d-error-detail{max-width:100%;overflow-wrap:anywhere;color:var(--muted);font:10px/1.7 var(--sans)}
 .bottle-3d-error .button{min-width:180px}
 @media(max-width:760px){.model-3d-stage.bottle-viewer-failed{padding:12px}.bottle-3d-error{padding:18px}}
+
+/* A foto do produto também é uma entrada direta para a personalização. */
+.product-photo-open{display:block;width:100%;padding:0;border:0;border-radius:0;color:inherit;text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;background:#eeeae1}
+.product-photo-open:focus-visible{outline:3px solid var(--gold);outline-offset:-3px}
+.product-photo-open .featured-tag{pointer-events:none}
