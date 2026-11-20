@@ -31,3 +31,30 @@
 .quote-footer{padding-top:16px;border-top:1px solid var(--line)}
 .quote-footer .modal-submit{width:100%}
 @media(max-width:760px){.quote-link{padding:12px 4px;border-bottom:1px solid var(--line);justify-content:flex-start}.quote-backdrop{padding:10px}.quote-dialog{max-height:94vh;padding:22px 16px}.quote-header h2{font-size:29px}.quote-item{gap:8px;padding:12px}.quote-item h3{font-size:16px}}
+
+/* Prévia 3D demonstrativa: modelo CSS manipulável, sem alegar escala técnica real. */
+.model-3d-stage{position:absolute;inset:0;display:grid;place-items:center;perspective:900px;touch-action:pan-y;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#fffefa 0,#eee9de 55%,#e1dbcf 100%)}
+.model-3d-object{position:absolute;left:50%;top:48%;width:190px;height:340px;transform-style:preserve-3d;transition:transform .08s linear;filter:drop-shadow(18px 22px 15px #37352c35)}
+.model-front{position:absolute;inset:0;border-radius:34px 34px 27px 27px;background:linear-gradient(90deg,#777c79 0%,#dfe2dc 13%,#f9faf5 33%,#c9ceca 58%,#858b87 100%);border:1px solid #929a94;box-shadow:inset 9px 0 15px #fff9,inset -12px 0 16px #424b4430;transform:translateZ(30px);overflow:hidden}
+.model-front:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 22%,#fff8 38%,transparent 53%);pointer-events:none}
+.model-side{position:absolute;inset:0;width:60px;left:auto;right:-30px;background:linear-gradient(90deg,#737a75,#424944);transform:rotateY(90deg) translateZ(0);border-radius:0 18px 18px 0}
+.model-back{position:absolute;inset:0;border-radius:30px;background:linear-gradient(90deg,#555d58,#bfc5bf,#606963);transform:translateZ(-30px)}
+.model-rim{position:absolute;top:-7px;left:0;right:0;height:20px;border-radius:50%;border:5px solid #858d87;background:linear-gradient(#f9faf5,#aeb5ae)}
+.model-base{position:absolute;bottom:-4px;left:8px;right:8px;height:13px;border-radius:50%;background:linear-gradient(#9da49e,#555d58)}
+.model-engraving{position:absolute;z-index:2;top:52%;left:50%;transform:translate(-50%,-50%);width:76%;text-align:center;overflow-wrap:anywhere;font:500 24px var(--serif);color:#a98656;text-shadow:0 1px 1px #fff9;pointer-events:none}
+.model-cup .model-front{clip-path:polygon(4% 0,96% 0,86% 100%,14% 100%)}
+.model-cup .model-side{clip-path:polygon(0 0,100% 8%,100% 92%,0 100%)}
+.model-bottle{width:150px;height:370px}
+.model-bottle .model-front{border-radius:34px 34px 27px 27px;clip-path:polygon(24% 0,76% 0,76% 13%,92% 18%,100% 28%,94% 94%,82% 100%,18% 100%,6% 94%,0 28%,8% 18%,24% 13%)}
+.model-bottle .model-rim{top:-9px;left:34%;right:34%;height:32px;border-radius:8px;background:linear-gradient(90deg,#606761,#dce0d9,#626a64)}
+.model-bottle .model-side{right:-25px;width:50px}
+.model-goblet{width:180px;height:330px}
+.model-goblet .model-front{clip-path:polygon(4% 0,96% 0,83% 57%,60% 64%,60% 90%,86% 94%,86% 100%,14% 100%,14% 94%,40% 90%,40% 64%,17% 57%)}
+.model-goblet .model-side{right:-27px;width:54px}
+.model-3d-shadow{position:absolute;bottom:17%;width:220px;height:30px;border-radius:50%;background:#55504425;filter:blur(13px)}
+.model-3d-hint{position:absolute;bottom:15px;left:0;right:0;text-align:center;color:#77756c;font-size:8px;letter-spacing:.08em;text-transform:uppercase;pointer-events:none}
+.model-3d-controls{position:absolute;z-index:4;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:5px 9px;background:#fffefaD9;border:1px solid #d8d1c4}
+.model-3d-controls span{font-size:8px;letter-spacing:.16em;color:#77756c}
+.model-3d-controls button{width:29px;height:27px;border:1px solid #d8d1c4;background:transparent;color:#343a34;font-size:17px}
+.engraving-overlay.on-3d-model{display:none}
+@media(max-width:760px){.model-3d-object{transform-origin:center center;scale:.82}.model-3d-hint{bottom:8px}.model-3d-shadow{bottom:13%}}
