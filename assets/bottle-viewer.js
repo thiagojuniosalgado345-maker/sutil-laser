@@ -233,7 +233,7 @@ function createBottleMesh() {
   bottle.add(blueBody);
 
   const topSteelBand = createLatheMesh([
-    [0.999, 2.91], [1.012, 2.96], [1.023, 3.04], [1.045, 3.17],
+    [1.027, 2.91], [1.032, 2.96], [1.043, 3.04], [1.065, 3.17],
     [1.077, 3.34], [1.101, 3.48], [1.101, 3.515], [1.078, 3.535],
     [1.03, 3.525], [1.013, 3.48]
   ], steelMaterial, 'Faixa superior larga em aço inox');
@@ -306,7 +306,7 @@ function drawEngraving(context, customization) {
 
   const xPercent = clamp(Number(customization.positionX ?? 50), 0, 100);
   const yPercent = clamp(Number(customization.positionY ?? 52), 0, 100);
-  const x = TEXTURE_WIDTH * xPercent / 100;
+  const x = TEXTURE_WIDTH * (0.5 + ((xPercent - 50) / 100) * 0.42);
   const y = TEXTURE_HEIGHT * (1 - yPercent / 100);
   const size = clamp(Number(customization.size ?? 23), 12, 38);
   const fontSize = clamp(Math.round(size * 3.85), 46, 150);
@@ -320,7 +320,7 @@ function drawEngraving(context, customization) {
     ? customization.color
     : '#d7d9d5';
 
-  const maxWidth = TEXTURE_WIDTH * 0.42;
+  const maxWidth = TEXTURE_WIDTH * 0.30;
   let cursorY = y;
 
   if (logo && logo.complete && logo.naturalWidth > 0) {
@@ -415,12 +415,16 @@ function makePersonalizationOverlay(bodyMesh, renderer) {
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
 
-  const material = new THREE.MeshBasicMaterial({
+  const material = new THREE.MeshPhysicalMaterial({
     map: texture,
     transparent: true,
     alphaTest: 0.003,
     depthWrite: false,
     side: THREE.DoubleSide,
+    metalness: 0.46,
+    roughness: 0.36,
+    clearcoat: 0.18,
+    clearcoatRoughness: 0.32,
     polygonOffset: true,
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1,
