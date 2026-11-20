@@ -23,7 +23,7 @@ try {
   const status = await page.evaluate(() => window.__SUTIL_3D_STATUS);
   if (status.state !== 'ready') {
     await fs.mkdir('artifacts', { recursive: true });
-    await page.screenshot({ path: 'artifacts/bottle-3d-failure.png', fullPage: true });
+    await page.screenshot({ path: 'artifacts/bottle-3d-failure.png' });
     throw new Error('3D viewer did not initialize: ' + JSON.stringify(status) + '\nBrowser errors:\n' + errors.join('\n'));
   }
 
@@ -64,7 +64,8 @@ try {
   await page.locator('#modelRotateRight').click();
   await page.locator('#modelViewReset').click();
   await page.locator('#modelRotateLeft').click();
-  await page.screenshot({ path: 'artifacts/bottle-3d-success.png', fullPage: true });
+  await page.locator('#bottle3dCanvas').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'artifacts/bottle-3d-success.png' });
 
   const finalStatus = await page.evaluate(() => window.__SUTIL_3D_STATUS);
   console.log(JSON.stringify({ result: 'PASS', initialStatus: status, finalStatus, gl, canvas: canvasBox, browserErrors: errors }, null, 2));
