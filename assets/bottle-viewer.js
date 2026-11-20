@@ -56,7 +56,7 @@ function drawEngraving(context, customization) {
   const yPercent = clamp(Number(customization.positionY ?? 52), 0, 100);
   // A escala horizontal percorre apenas a face frontal útil, sem deixar o texto
   // desaparecer para trás da parede cilíndrica quando o usuário desloca o slider.
-  const x = TEXTURE_WIDTH * (0.5 + ((xPercent - 50) / 100) * 0.42);
+  const x = TEXTURE_WIDTH * (0.5 + ((50 - xPercent) / 100) * 0.42);
   // O slider começa em "mais acima"; por isso o y da tela segue a mesma direção.
   const desiredCenterY = TEXTURE_HEIGHT * yPercent / 100;
   const size = clamp(Number(customization.size ?? 23), 12, 38);
