@@ -2,9 +2,9 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 
 const errors = [];
-const browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl'] });
+const browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   page.on('pageerror', error => errors.push('pageerror: ' + error.message));
   page.on('console', message => {
     if (message.type() === 'error') errors.push('console: ' + message.text());
