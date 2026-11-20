@@ -44,10 +44,14 @@
     } : product);
   }
   function isReferenceBottle(product) {
-    return Boolean(product && (
-      String(product.id) === REFERENCE_BOTTLE.id ||
-      String(product.name || '').trim().toLocaleLowerCase('pt-BR') === REFERENCE_BOTTLE.name.toLocaleLowerCase('pt-BR')
-    ));
+    if (!product) return false;
+    const id = String(product.id || '').trim().toLowerCase();
+    const name = String(product.name || '').trim().toLocaleLowerCase('pt-BR');
+    const model = String(product.model_type || product.model || '').trim().toLowerCase();
+    const category = String(product.category || '').trim().toLocaleLowerCase('pt-BR');
+    return id === REFERENCE_BOTTLE.id ||
+      name === REFERENCE_BOTTLE.name.toLocaleLowerCase('pt-BR') ||
+      (model === 'bottle' && (name.includes('garrafa') || category.includes('garrafa')));
   }
 
   function toast(message) {
