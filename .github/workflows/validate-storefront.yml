@@ -28,12 +28,17 @@ jobs:
           node --check config.js
       - name: Validate catalog JSON
         run: python -m json.tool data/catalog.json > /dev/null
+      - name: Validate 3D model source
+        run: |
+          python -m py_compile scripts/build_sutil_bottle.py
+          test -s assets/models/garrafa-termica-azul.glb
       - name: Verify required storefront files
         run: |
           test -f index.html
           test -f admin.html
           test -f assets/site.css
           test -f assets/bottle-viewer.js
+          test -f scripts/build_sutil_bottle.py
           test -f assets/garrafa-azul-sem-nome.jpg
           test -f assets/admin.css
           test -f supabase/SETUP.sql
