@@ -26,9 +26,21 @@ jobs:
         with:
           node-version: 22
       - name: Install Playwright
+        run: npm install --no-save playwright
+      - name: Detect browser on runner
         run: |
-          npm install --no-save playwright
-          npx playwright install --with-deps chromium
+          for candidate in google-chrome google-chrome-stable chromium chromium-browser; do
+            browser_path="$(command -v "$candidate" || true)"
+            if [ -n "$browser_path" ]; then
+              echo "CHROME_BIN=$browser_path" >> "$GITHUB_ENV"
+              "$browser_path" --version
+              exit 0
+            fi
+          done
+          echo "CHROME_BIN=" >> "$GITHUB_ENV"
+      - name: Install Chromium fallback
+        if: ${{ env.CHROME_BIN == '' }}
+        run: npx playwright install --with-deps chromium
       - name: Start local storefront
         run: |
           python -m http.server 4173 > /tmp/sutil-http.log 2>&1 &
