@@ -390,26 +390,24 @@ export async function createBottleViewer(stage, options = {}) {
       object.castShadow = !mobileCanvas;
       object.receiveShadow = !mobileCanvas;
 
-      // Preserve every texture and color-space setting created by GLTFLoader.
-      // Only upgrade the material by copying the imported material first;
-      // never rebuild it from a partial list of properties.
-      const originalMaterials = Array.isArray(object.material) ? object.material : [object.material];
-      const upgradedMaterials = originalMaterials.filter(Boolean).map((source) => {
-        const label = ((source.name || '') + ' ' + (object.name || '')).toLocaleLowerCase('pt-BR');
+      // Preserve the exact GLTFLoader material instance and its color-space,
+      // base-color, normal and metallic-roughness maps. Only tune its PBR values.
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.filter(Boolean).forEach((material) => {
+        const label = ((material.name || '') + ' ' + (object.name || '')).toLocaleLowerCase('pt-BR');
         const steel = /inox|aço|escovado/.test(label);
         const blue = /azul|corpo/.test(label);
-        const material = new THREE.MeshPhysicalMaterial().copy(source);
-        material.name = source.name || object.name || 'Material físico';
-        material.metalness = steel ? 0.94 : blue ? 0.16 : (source.metalness ?? 0.10);
-        material.roughness = steel ? 0.31 : blue ? 0.43 : (source.roughness ?? 0.30);
-        material.clearcoat = steel ? 0.12 : blue ? 0.20 : 0.28;
-        material.clearcoatRoughness = steel ? 0.34 : blue ? 0.48 : 0.26;
-        material.ior = 1.48;
-        material.anisotropy = steel ? 0.72 : 0.04;
-        material.anisotropyRotation = steel ? Math.PI / 2 : 0;
-        material.envMapIntensity = steel ? 1.25 : blue ? 1.05 : 0.90;
+        material.metalness = steel ? 0.88 : blue ? 0.12 : (material.metalness ?? 0.10);
+        material.roughness = steel ? 0.31 : blue ? 0.46 : (material.roughness ?? 0.30);
+        material.envMapIntensity = steel ? 1.18 : blue ? 0.98 : 0.86;
+        // GLTFLoader usually creates MeshStandardMaterial. Apply clearcoat only
+        // when the imported material already supports the physical property.
+        if ('clearcoat' in material) {
+          material.clearcoat = steel ? 0.10 : blue ? 0.18 : 0.26;
+          material.clearcoatRoughness = steel ? 0.36 : blue ? 0.48 : 0.28;
+        }
         if (material.normalScale) {
-          material.normalScale.set(steel ? 0.32 : 0.16, steel ? 0.72 : 0.28);
+          material.normalScale.set(steel ? 0.28 : 0.13, steel ? 0.65 : 0.24);
         }
         ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'aoMap'].forEach((key) => {
           const texture = material[key];
@@ -419,9 +417,7 @@ export async function createBottleViewer(stage, options = {}) {
           }
         });
         material.needsUpdate = true;
-        return material;
       });
-      object.material = Array.isArray(object.material) ? upgradedMaterials : upgradedMaterials[0];
     });
     scene.add(gltfScene);
 
