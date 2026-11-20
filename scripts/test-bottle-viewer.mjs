@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 
 const errors = [];
+const glbResponses = [];
 const browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
@@ -10,6 +11,11 @@ try {
     if (message.type() === 'error') errors.push('console: ' + message.text());
   });
   page.on('requestfailed', request => errors.push('requestfailed: ' + request.url() + ' — ' + (request.failure()?.errorText || 'unknown')));
+  page.on('response', response => {
+    if (response.url().includes('garrafa-termica-azul.glb')) {
+      glbResponses.push({ status: response.status(), bytes: Number(response.headers()['content-length'] || 0), url: response.url() });
+    }
+  });
 
   await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForSelector('#products [data-product]', { timeout: 30000 });
@@ -21,6 +27,11 @@ try {
   await page.waitForFunction(() => ['ready', 'error'].includes(window.__SUTIL_3D_STATUS?.state), undefined, { timeout: 60000 });
 
   const status = await page.evaluate(() => window.__SUTIL_3D_STATUS);
+  if (!glbResponses.length || glbResponses.some(response => response.status !== 200)) {
+    throw new Error('O arquivo GLB não foi baixado corretamente: ' + JSON.stringify(glbResponses));
+  }
+  const glbBytes = glbResponses[glbResponses.length - 1].bytes;
+  if (glbBytes && glbBytes > 8 * 1024 * 1024) throw new Error('O modelo 3D ultrapassou o orçamento de 8 MB: ' + glbBytes);
   if (status.state !== 'ready') {
     await fs.mkdir('artifacts', { recursive: true });
     await page.screenshot({ path: 'artifacts/bottle-3d-failure.png' });
@@ -68,7 +79,7 @@ try {
   await page.screenshot({ path: 'artifacts/bottle-3d-success.png' });
 
   const finalStatus = await page.evaluate(() => window.__SUTIL_3D_STATUS);
-  console.log(JSON.stringify({ result: 'PASS', initialStatus: status, finalStatus, gl, canvas: canvasBox, browserErrors: errors }, null, 2));
+  console.log(JSON.stringify({ result: 'PASS', initialStatus: status, finalStatus, gl, canvas: canvasBox, glbResponses, browserErrors: errors }, null, 2));
 } finally {
   await browser.close();
 }
