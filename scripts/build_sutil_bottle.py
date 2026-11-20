@@ -13,10 +13,24 @@ W, H = 2048, 1024
 SECTIONS = 256
 
 
-def save_png(name, array):
+def save_texture(name, array, quality=94):
     path = os.path.join(TEXTURE_DIR, name)
-    Image.fromarray(np.clip(array, 0, 255).astype(np.uint8)).save(path, optimize=True)
+    pixels = np.clip(array, 0, 255).astype(np.uint8)
+    Image.fromarray(pixels, mode='RGB').save(
+        path, format='JPEG', quality=quality, subsampling=0, optimize=True
+    )
     return Image.open(path).convert('RGB')
+
+
+# Remove PNGs from the previous high-resolution prototype. JPEG quality 94–97
+# retains enough detail for a 3D viewport while cutting mobile download size.
+for legacy_name in [
+    'blue-powdercoat.png', 'blue-powdercoat-normal.png', 'blue-powdercoat-mr.png',
+    'brushed-stainless.png', 'brushed-stainless-normal.png', 'brushed-stainless-mr.png'
+]:
+    legacy_path = os.path.join(TEXTURE_DIR, legacy_name)
+    if os.path.exists(legacy_path):
+        os.remove(legacy_path)
 
 
 def tangent_normal(height, strength=2.0):
@@ -41,13 +55,13 @@ blue = np.zeros((H, W, 3), dtype=np.float32)
 blue[:, :, 0] = 35 + 1.2 * np.cos(u * 2 * np.pi) + grain * 0.58
 blue[:, :, 1] = 51 + 1.4 * np.cos(u * 2 * np.pi) + grain * 0.70
 blue[:, :, 2] = 137 + 2.0 * np.cos(u * 2 * np.pi) + grain
-blue_img = save_png('blue-powdercoat.png', blue)
-blue_normal = save_png('blue-powdercoat-normal.png', tangent_normal(powder_height, 0.55))
+blue_img = save_texture('blue-powdercoat.jpg', blue, quality=95)
+blue_normal = save_texture('blue-powdercoat-normal.jpg', tangent_normal(powder_height, 0.55), quality=96)
 blue_rough = np.zeros((H, W, 3), dtype=np.uint8)
 blue_rough[:, :, 0] = 255
 blue_rough[:, :, 1] = np.clip(158 + rng.normal(0, 4, (H, W)), 145, 170).astype(np.uint8)
 blue_rough[:, :, 2] = 38
-blue_mr = save_png('blue-powdercoat-mr.png', blue_rough)
+blue_mr = save_texture('blue-powdercoat-mr.jpg', blue_rough, quality=97)
 
 # Aço escovado: reflexo longitudinal (riscos muito finos e longos), sem parecer cromado.
 line_field = (1.4 * np.sin(u * 2 * np.pi * 880) +
@@ -58,14 +72,14 @@ steel = np.zeros((H, W, 3), dtype=np.float32)
 steel[:, :, 0] = 173 + line_field + steel_noise
 steel[:, :, 1] = 180 + line_field + steel_noise
 steel[:, :, 2] = 178 + line_field + steel_noise
-steel_img = save_png('brushed-stainless.png', steel)
+steel_img = save_texture('brushed-stainless.jpg', steel, quality=95)
 steel_height = (line_field * 0.008 + rng.normal(0, 0.001, (H, W))).astype(np.float32)
-steel_normal = save_png('brushed-stainless-normal.png', tangent_normal(steel_height, 7.0))
+steel_normal = save_texture('brushed-stainless-normal.jpg', tangent_normal(steel_height, 7.0), quality=96)
 steel_mr = np.zeros((H, W, 3), dtype=np.uint8)
 steel_mr[:, :, 0] = 255
 steel_mr[:, :, 1] = np.clip(66 + rng.normal(0, 5, (H, W)), 52, 82).astype(np.uint8)
 steel_mr[:, :, 2] = 245
-steel_metal_rough = save_png('brushed-stainless-mr.png', steel_mr)
+steel_metal_rough = save_texture('brushed-stainless-mr.jpg', steel_mr, quality=97)
 
 blue_mat = trimesh.visual.material.PBRMaterial(
     name='Pintura eletrostática azul royal fosca',
