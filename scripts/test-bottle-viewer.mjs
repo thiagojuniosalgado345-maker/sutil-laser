@@ -3,7 +3,9 @@ import fs from 'node:fs/promises';
 
 const errors = [];
 const glbResponses = [];
-const browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
+const launchOptions = { headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] };
+if (process.env.CHROME_BIN) launchOptions.executablePath = process.env.CHROME_BIN;
+const browser = await chromium.launch(launchOptions);
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   page.on('pageerror', error => errors.push('pageerror: ' + error.message));
