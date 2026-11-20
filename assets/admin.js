@@ -139,6 +139,10 @@
     if(error)throw error;
     settings=data||{};
     $('storeName').value=settings.store_name||'Sútil Laser';
+    $('storeBrandMark').value=settings.brand_mark||'S·L';
+    $('storeAccent').value=settings.accent_color||'#a98656';
+    $('storeLogoUrl').value=settings.brand_logo_url||'';
+    $('storeLogoFile').value='';
     $('storeTagline').value=settings.tagline||'';
     $('storeInstagram').value=settings.instagram_url||'';
     $('storeWhatsapp').value=settings.whatsapp_number||'';
@@ -150,9 +154,18 @@
     try{
       const instagram=$('storeInstagram').value.trim();
       if(instagram && !/^https:\/\//i.test(instagram))throw new Error('Use o endereço completo https:// para o Instagram.');
+      let logoUrl=$('storeLogoUrl').value.trim();
+      if(logoUrl && !/^https:\/\//i.test(logoUrl))throw new Error('A URL do logotipo deve começar com https://.');
+      const logoFile=$('storeLogoFile').files?.[0];
+      if(logoFile)logoUrl=await uploadPhoto(logoFile);
+      const accent=$('storeAccent').value;
+      if(!/^#[0-9a-f]{6}$/i.test(accent))throw new Error('Escolha uma cor válida.');
       const values={
         id:1,
         store_name:$('storeName').value.trim(),
+        brand_mark:$('storeBrandMark').value.trim().slice(0,5)||'SL',
+        brand_logo_url:logoUrl||null,
+        accent_color:accent,
         tagline:$('storeTagline').value.trim(),
         instagram_url:instagram||null,
         whatsapp_number:$('storeWhatsapp').value.replace(/\D/g,'')||null,
