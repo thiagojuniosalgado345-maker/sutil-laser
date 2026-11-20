@@ -105,3 +105,20 @@
 .product-photo-open{display:block;width:100%;padding:0;border:0;border-radius:0;color:inherit;text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;background:#eeeae1}
 .product-photo-open:focus-visible{outline:3px solid var(--gold);outline-offset:-3px}
 .product-photo-open .featured-tag{pointer-events:none}
+
+
+/* Acabamento de apresentação de produto: fundo contínuo e interação 360°. */
+.model-3d-stage{background:radial-gradient(ellipse at 50% 38%,#f8f5ed 0%,#ece7dd 64%,#e4ded2 100%);touch-action:none}
+.bottle-3d-canvas{touch-action:none;cursor:grab}
+.bottle-3d-canvas:active{cursor:grabbing}
+.bottle-3d-hint{position:absolute;z-index:4;left:12px;right:12px;bottom:10px;text-align:center;pointer-events:none;color:#77776f;font:8px/1.5 var(--sans);letter-spacing:.10em;text-transform:uppercase;text-shadow:0 1px 3px #fff}
+.bottle-3d-loading{z-index:5}
+.model-3d-controls{display:flex;align-items:center;justify-content:center;gap:8px;max-width:calc(100% - 20px);padding:8px 10px}
+.model-3d-controls span{font-size:8px;letter-spacing:.13em;white-space:nowrap}
+.model-3d-controls button{width:36px;height:34px;display:grid;place-items:center;border:1px solid #d3cdbf;background:#fffefa;color:#34382f;font-size:21px;line-height:1}
+.model-3d-controls button:hover{background:#34382f;color:white}
+@media(max-width:760px){
+  .bottle-3d-hint{bottom:8px;font-size:7px}
+  .model-3d-controls{gap:5px;padding:6px 7px}
+  .model-3d-controls button{width:32px;height:31px}
+}
