@@ -56,9 +56,9 @@ function drawEngraving(context, customization) {
   const yPercent = clamp(Number(customization.positionY ?? 52), 0, 100);
   // A escala horizontal percorre apenas a face frontal útil, sem deixar o texto
   // desaparecer para trás da parede cilíndrica quando o usuário desloca o slider.
-  const x = TEXTURE_WIDTH * (0.5 + ((50 - xPercent) / 100) * 0.42);
+  const x = TEXTURE_WIDTH * xPercent / 100;
   // O slider começa em "mais acima"; por isso o y da tela segue a mesma direção.
-  const desiredCenterY = TEXTURE_HEIGHT * (1 - yPercent / 100);
+  const desiredCenterY = TEXTURE_HEIGHT * yPercent / 100;
   const size = clamp(Number(customization.size ?? 23), 12, 38);
   const fontSize = clamp(Math.round(size * 3.85), 46, 150);
   const fontChoice = customization.font || 'serif';
@@ -145,33 +145,77 @@ function drawEngraving(context, customization) {
   }
 }
 
-function makePersonalizationOverlay(bodyMesh, renderer) {
-  const geometry = bodyMesh.geometry.clone();
-  const uv = geometry.attributes.uv;
-  if (!uv) throw new Error('A malha não contém coordenadas UV para a gravação.');
+const BOTTLE_BODY_PROFILE = [
+  [0.535, 0.775], [0.555, 0.765], [0.61, 0.778], [0.73, 0.792],
+  [0.98, 0.815], [1.38, 0.855], [1.85, 0.902], [2.29, 0.949],
+  [2.52, 0.976], [2.61, 0.982], [2.66, 0.981]
+];
 
-  // A convenção de UV exportada pela malha inverte os dois eixos na face frontal.
-  // Compensamos U e V para nomes e logos aparecerem legíveis e na orientação correta.
-  for (let index = 0; index < uv.count; index += 1) {
-    uv.setXY(index, 1 - uv.getX(index), 1 - uv.getY(index));
+function bottleRadiusAt(height) {
+  for (let index = 0; index < BOTTLE_BODY_PROFILE.length - 1; index += 1) {
+    const [y0, r0] = BOTTLE_BODY_PROFILE[index];
+    const [y1, r1] = BOTTLE_BODY_PROFILE[index + 1];
+    if (height >= y0 && height <= y1) {
+      const amount = (height - y0) / (y1 - y0);
+      return r0 + (r1 - r0) * amount;
+    }
   }
-  uv.needsUpdate = true;
+  return height < BOTTLE_BODY_PROFILE[0][0]
+    ? BOTTLE_BODY_PROFILE[0][1]
+    : BOTTLE_BODY_PROFILE[BOTTLE_BODY_PROFILE.length - 1][1];
+}
 
-  const positions = geometry.attributes.position;
-  const normals = geometry.attributes.normal;
-  if (!normals) geometry.computeVertexNormals();
-  const finalNormals = geometry.attributes.normal;
-  for (let index = 0; index < positions.count; index += 1) {
-    positions.setXYZ(
-      index,
-      positions.getX(index) + finalNormals.getX(index) * 0.0032,
-      positions.getY(index) + finalNormals.getY(index) * 0.0032,
-      positions.getZ(index) + finalNormals.getZ(index) * 0.0032
-    );
+function createFrontEngravingGeometry() {
+  const columns = 112;
+  const rows = 64;
+  const thetaStart = -0.88;
+  const thetaEnd = 0.88;
+  const yMin = 0.575;
+  const yMax = 2.615;
+  const positions = [];
+  const uvs = [];
+  const indices = [];
+
+  for (let row = 0; row <= rows; row += 1) {
+    const v = row / rows;
+    const y = yMin + (yMax - yMin) * v;
+    const radius = bottleRadiusAt(y) + 0.0045;
+    for (let column = 0; column <= columns; column += 1) {
+      const u = column / columns;
+      const theta = thetaStart + (thetaEnd - thetaStart) * u;
+      positions.push(
+        Math.sin(theta) * radius,
+        y,
+        Math.cos(theta) * radius
+      );
+      // U progride da esquerda para a direita; V progride da base ao topo.
+      uvs.push(u, v);
+    }
   }
-  positions.needsUpdate = true;
+
+  const stride = columns + 1;
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const a = row * stride + column;
+      const b = a + 1;
+      const c = (row + 1) * stride + column;
+      const d = c + 1;
+      indices.push(a, b, d, a, d, c);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
+  return geometry;
+}
 
+function makePersonalizationOverlay(bodyMesh, renderer) {
+  if (!bodyMesh?.isMesh) throw new Error('A malha do corpo azul não está disponível.');
+  const geometry = createFrontEngravingGeometry();
   const canvas = document.createElement('canvas');
   canvas.width = TEXTURE_WIDTH;
   canvas.height = TEXTURE_HEIGHT;
@@ -180,6 +224,7 @@ function makePersonalizationOverlay(bodyMesh, renderer) {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = true;
   texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   texture.generateMipmaps = true;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -192,10 +237,10 @@ function makePersonalizationOverlay(bodyMesh, renderer) {
     transparent: true,
     alphaTest: 0.003,
     depthWrite: false,
-    side: THREE.DoubleSide,
-    metalness: 0.46,
-    roughness: 0.36,
-    clearcoat: 0.18,
+    side: THREE.FrontSide,
+    metalness: 0.34,
+    roughness: 0.40,
+    clearcoat: 0.14,
     clearcoatRoughness: 0.32,
     polygonOffset: true,
     polygonOffsetFactor: -1,
@@ -203,7 +248,7 @@ function makePersonalizationOverlay(bodyMesh, renderer) {
     toneMapped: false
   });
   const overlay = new THREE.Mesh(geometry, material);
-  overlay.name = 'Textura de personalização aderente à superfície';
+  overlay.name = 'Faixa curva frontal para personalização';
   overlay.renderOrder = 8;
   bodyMesh.add(overlay);
 
