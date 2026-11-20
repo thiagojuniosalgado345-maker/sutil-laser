@@ -207,6 +207,8 @@
       return;
     }
     const file = $('#customLogo').files[0];
+    const options = selectedProduct.personalization || {};
+    const enabled = key => options[key] !== false;
     const quantity = Math.min(999,Math.max(1,Number.parseInt($('#customQuantity').value,10)||1));
     quoteItems.push({
       key:crypto.randomUUID(),
@@ -214,13 +216,13 @@
       name:selectedProduct.name,
       priceLabel:selectedProduct.price_label || money(selectedProduct.price),
       quantity,
-      text:$('#customText').value.trim() || 'A combinar',
-      font:$('#customFont').selectedOptions[0].text,
-      color:$('#customColor').selectedOptions[0].text,
-      size:$('#customSize').value,
-      positionY:$('#customPosition').value,
-      positionX:$('#customPositionX').value,
-      logoFilename:file ? file.name : ''
+      text:enabled('text') ? ($('#customText').value.trim() || 'A combinar') : '',
+      font:enabled('font') ? $('#customFont').selectedOptions[0].text : '',
+      color:enabled('color') ? $('#customColor').selectedOptions[0].text : '',
+      size:enabled('size') ? $('#customSize').value : '',
+      positionY:enabled('position') ? $('#customPosition').value : '',
+      positionX:enabled('position') ? $('#customPositionX').value : '',
+      logoFilename:enabled('logo') && file ? file.name : ''
     });
     renderQuote();
     closeCustomizer();
@@ -229,8 +231,18 @@
   function renderQuote() {
     $('#quoteCount').textContent = String(quoteItems.length);
     $('#quoteItems').innerHTML = quoteItems.length ? quoteItems.map(item => {
-      const details = 'Quantidade: '+item.quantity+'\\nTexto: '+item.text+'\\nLetra: '+item.font+' · Tom: '+item.color+'\\nComposição: tamanho '+item.size+' · altura '+item.positionY+' · largura '+item.positionX+(item.logoFilename?'\\nArte para anexar: '+item.logoFilename:'');
-      return '<article class="quote-item"><div><h3>'+escapeHtml(item.name)+'</h3><p>'+escapeHtml(details)+'\\n'+escapeHtml(item.priceLabel)+'</p></div><button class="quote-remove" type="button" data-remove-quote="'+escapeHtml(item.key)+'">Remover</button></article>';
+      const details = [
+        'Quantidade: '+item.quantity,
+        item.text ? 'Texto: '+item.text : '',
+        item.font ? 'Letra: '+item.font : '',
+        item.color ? 'Tom: '+item.color : '',
+        item.size ? 'Tamanho: '+item.size : '',
+        item.positionY ? 'Altura: '+item.positionY : '',
+        item.positionX ? 'Largura: '+item.positionX : '',
+        item.logoFilename ? 'Arte para anexar: '+item.logoFilename : '',
+        item.priceLabel
+      ].filter(Boolean).join('\\n');
+      return '<article class="quote-item"><div><h3>'+escapeHtml(item.name)+'</h3><p>'+escapeHtml(details)+'</p></div><button class="quote-remove" type="button" data-remove-quote="'+escapeHtml(item.key)+'">Remover</button></article>';
     }).join('') : '<div class="catalog-empty">Sua seleção ainda está vazia. Explore a coleção e adicione as peças que deseja consultar.</div>';
   }
   function openQuote() {
@@ -251,12 +263,14 @@
         (index+1)+') '+item.name,
         'Quantidade: '+item.quantity,
         'Preço exibido: '+item.priceLabel,
-        'Texto: '+item.text,
-        'Estilo da letra: '+item.font,
-        'Tom ilustrativo: '+item.color,
-        'Tamanho/posição de referência: '+item.size+' / altura '+item.positionY+' / largura '+item.positionX,
+        item.text ? 'Texto: '+item.text : '',
+        item.font ? 'Estilo da letra: '+item.font : '',
+        item.color ? 'Tom ilustrativo: '+item.color : '',
+        item.size ? 'Tamanho de referência: '+item.size : '',
+        item.positionY ? 'Altura: '+item.positionY : '',
+        item.positionX ? 'Largura: '+item.positionX : '',
         'Arquivo de referência: '+(item.logoFilename ? item.logoFilename+' (vou anexar na conversa)' : 'não anexado')
-      ].join('\\n'))
+      ].filter(Boolean).join('\\n'))
     ];
     lines.push('','Por favor, confirmem disponibilidade, preço final, prazo e a arte antes da produção.');
     return lines.join('\\n');
