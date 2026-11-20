@@ -172,7 +172,7 @@
     $('#catalogCount').textContent = list.length + (list.length===1?' peça encontrada':' peças encontradas');
     $('#products').innerHTML = list.length ? list.map(p => `
       <article class="product-card">
-        <div class="product-photo">${photoMarkup(p)}${p.featured?'<span class="featured-tag">Escolha especial</span>':''}</div>
+        <button class="product-photo product-photo-open" type="button" data-product="${escapeHtml(p.id)}" aria-label="Abrir personalização de ${escapeHtml(p.name)}" title="Clique para personalizar">${photoMarkup(p)}${p.featured?'<span class="featured-tag">Escolha especial</span>':''}</button>
         <div class="product-info">
           <span class="product-category">${escapeHtml(p.category || 'Coleção')}</span>
           <h3>${escapeHtml(p.name)}</h3>
