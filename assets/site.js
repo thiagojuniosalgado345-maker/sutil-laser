@@ -17,6 +17,7 @@
   let logoObjectUrl = null;
   let bottleViewer = null;
   let bottleViewerGeneration = 0;
+  let bottleEditCount = 0;
   let logoImageElement = null;
   window.__SUTIL_3D_STATUS = { state: 'idle', updatedAt: Date.now() };
   function set3DStatus(state, detail = {}) {
@@ -248,10 +249,16 @@
     }
   }
   function rotateModelBy(degrees) { bottleViewer?.rotateBy(degrees); }
-  function update3DModel() { bottleViewer?.update(currentBottleCustomization()); }
+  function update3DModel() {
+    if (!bottleViewer) return;
+    bottleViewer.update(currentBottleCustomization());
+    bottleEditCount += 1;
+    set3DStatus('editing', { updates: bottleEditCount, message: 'Personalização aplicada à superfície curva' });
+  }
 
   function openCustomizer(product) {
     destroyBottle3D();
+    bottleEditCount = 0;
     selectedProduct = product;
     $('#modalTitle').textContent = product.name;
     $('#customText').value = '';
