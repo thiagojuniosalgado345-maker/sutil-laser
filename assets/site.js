@@ -13,6 +13,7 @@
   let settings = {store_name:'Sútil Laser',brand_mark:'S·L',brand_logo_url:'',accent_color:'#a98656',tagline:'Personalizados com significado',instagram_url:'https://www.instagram.com/sutillaser/',whatsapp_number:'',contact_email:''};
   let activeCategory = 'Todos';
   let selectedProduct = null;
+  let quoteItems = [];
   let logoObjectUrl = null;
 
   function toast(message) {
@@ -193,32 +194,81 @@
     $('#engravingOverlay').style.top = $('#customPosition').value + '%';
     $('#engravingOverlay').style.left = $('#customPositionX').value + '%';
   }
-  function buildMessage() {
-    const file = $('#customLogo').files[0];
-    return [
-      'Olá! Gostaria de consultar uma personalização.',
-      'Produto: '+(selectedProduct?.name || ''),
-      'Preço exibido: '+(selectedProduct?.price_label || money(selectedProduct?.price)),
-      'Texto: '+($('#customText').value.trim() || 'a combinar'),
-      'Estilo da letra: '+$('#customFont').selectedOptions[0].text,
-      'Cor ilustrativa: '+$('#customColor').selectedOptions[0].text,
-      'Quantidade: '+Math.min(999,Math.max(1,Number.parseInt($('#customQuantity').value,10)||1)),
-      'Tamanho/posição (referência): '+$('#customSize').value+' / altura '+$('#customPosition').value+' / largura '+$('#customPositionX').value,
-      'Arquivo de referência: '+(file ? file.name+' (vou anexá-lo no atendimento)' : 'não anexado'),
-      'Por favor, confirmem disponibilidade, preço final, prazo e a arte antes da produção.'
-    ].join('\n');
-  }
-  async function sendRequest() {
+  function addToQuote() {
     if (!selectedProduct) return;
-    const message = buildMessage();
-    const digits = String(settings.whatsapp_number || '').replace(/\D/g,'');
+    if (quoteItems.length >= 15) {
+      toast('Sua lista chegou ao limite de 15 itens. Envie esta solicitação antes de adicionar mais.');
+      return;
+    }
+    const file = $('#customLogo').files[0];
+    const quantity = Math.min(999,Math.max(1,Number.parseInt($('#customQuantity').value,10)||1));
+    quoteItems.push({
+      key:crypto.randomUUID(),
+      productId:selectedProduct.id,
+      name:selectedProduct.name,
+      priceLabel:selectedProduct.price_label || money(selectedProduct.price),
+      quantity,
+      text:$('#customText').value.trim() || 'A combinar',
+      font:$('#customFont').selectedOptions[0].text,
+      color:$('#customColor').selectedOptions[0].text,
+      size:$('#customSize').value,
+      positionY:$('#customPosition').value,
+      positionX:$('#customPositionX').value,
+      logoFilename:file ? file.name : ''
+    });
+    renderQuote();
+    closeCustomizer();
+    toast('Peça adicionada à sua seleção.');
+  }
+  function renderQuote() {
+    $('#quoteCount').textContent = String(quoteItems.length);
+    $('#quoteItems').innerHTML = quoteItems.length ? quoteItems.map(item => {
+      const details = 'Quantidade: '+item.quantity+'\\nTexto: '+item.text+'\\nLetra: '+item.font+' · Tom: '+item.color+'\\nComposição: tamanho '+item.size+' · altura '+item.positionY+' · largura '+item.positionX+(item.logoFilename?'\\nArte para anexar: '+item.logoFilename:'');
+      return '<article class="quote-item"><div><h3>'+escapeHtml(item.name)+'</h3><p>'+escapeHtml(details)+'\\n'+escapeHtml(item.priceLabel)+'</p></div><button class="quote-remove" type="button" data-remove-quote="'+escapeHtml(item.key)+'">Remover</button></article>';
+    }).join('') : '<div class="catalog-empty">Sua seleção ainda está vazia. Explore a coleção e adicione as peças que deseja consultar.</div>';
+  }
+  function openQuote() {
+    renderQuote();
+    $('#quoteModal').classList.add('open');
+    document.body.classList.add('locked');
+    $('#quoteClose').focus();
+  }
+  function closeQuote() {
+    $('#quoteModal').classList.remove('open');
+    document.body.classList.remove('locked');
+  }
+  function buildQuoteMessage() {
+    const lines = [
+      'Olá! Gostaria de solicitar um orçamento para os itens abaixo.',
+      '',
+      ...quoteItems.map((item,index) => [
+        (index+1)+') '+item.name,
+        'Quantidade: '+item.quantity,
+        'Preço exibido: '+item.priceLabel,
+        'Texto: '+item.text,
+        'Estilo da letra: '+item.font,
+        'Tom ilustrativo: '+item.color,
+        'Tamanho/posição de referência: '+item.size+' / altura '+item.positionY+' / largura '+item.positionX,
+        'Arquivo de referência: '+(item.logoFilename ? item.logoFilename+' (vou anexar na conversa)' : 'não anexado')
+      ].join('\\n'))
+    ];
+    lines.push('','Por favor, confirmem disponibilidade, preço final, prazo e a arte antes da produção.');
+    return lines.join('\\n');
+  }
+  async function sendQuote() {
+    if (!quoteItems.length) {
+      toast('Adicione ao menos uma peça à sua seleção.');
+      return;
+    }
+    const message = buildQuoteMessage();
+    const digits = String(settings.whatsapp_number || '').replace(/\\D/g,'');
     if (digits.length >= 10) {
       window.open('https://wa.me/'+digits+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
-      toast('Abrindo o WhatsApp com os detalhes da sua ideia.');
+      toast('Abrindo o WhatsApp com sua lista de orçamento.');
       return;
     }
     const instagram = validExternalUrl(settings.instagram_url,'https://www.instagram.com/');
-    const opened = window.open(instagram,'_blank','noopener,noreferrer');
+    window.open(instagram,'_blank','noopener,noreferrer');
     let copied = false;
     try {
       if (navigator.clipboard?.writeText) {
@@ -226,7 +276,7 @@
         copied = true;
       }
     } catch (error) { console.warn('Área de transferência indisponível',error); }
-    toast(copied ? 'Resumo copiado. Cole no direct e anexe sua arte, se houver.' : 'Envie os detalhes que aparecem no personalizador pelo direct.');
+    toast(copied ? 'Resumo copiado. Cole no direct e anexe os arquivos de arte, se houver.' : 'Envie os detalhes da sua seleção pelo direct.');
   }
   $('#filters').addEventListener('click',event => {
     const button = event.target.closest('[data-category]');
@@ -260,10 +310,20 @@
     $('#logoPreview').src = logoObjectUrl;
     $('#logoPreview').hidden = false;
   });
-  $('#requestButton').addEventListener('click',sendRequest);
+  $('#requestButton').addEventListener('click',addToQuote);
+  $('#quoteOpen').addEventListener('click',openQuote);
+  $('#quoteClose').addEventListener('click',closeQuote);
+  $('#sendQuoteButton').addEventListener('click',sendQuote);
+  $('#quoteItems').addEventListener('click',event => {
+    const button=event.target.closest('[data-remove-quote]');
+    if(!button)return;
+    quoteItems=quoteItems.filter(item=>item.key!==button.dataset.removeQuote);
+    renderQuote();
+  });
+  $('#quoteModal').addEventListener('click',event => { if(event.target.id==='quoteModal') closeQuote(); });
   $('#modalClose').addEventListener('click',closeCustomizer);
   $('#customModal').addEventListener('click',event => { if(event.target.id==='customModal') closeCustomizer(); });
-  document.addEventListener('keydown',event => { if(event.key==='Escape' && $('#customModal').classList.contains('open')) closeCustomizer(); });
+  document.addEventListener('keydown',event => { if(event.key==='Escape' && $('#customModal').classList.contains('open')) closeCustomizer(); else if(event.key==='Escape' && $('#quoteModal').classList.contains('open')) closeQuote(); });
   $('#menuToggle').addEventListener('click',() => {
     const nav = $('#mainNav');
     const open = nav.classList.toggle('open');
@@ -271,7 +331,7 @@
     $('#menuToggle').textContent = open ? '×' : '☰';
   });
   $('#mainNav').addEventListener('click',event => {
-    if (event.target.closest('a')) {
+    if (event.target.closest('a') || event.target.closest('#quoteOpen')) {
       $('#mainNav').classList.remove('open');
       $('#menuToggle').setAttribute('aria-expanded','false');
       $('#menuToggle').textContent = '☰';
