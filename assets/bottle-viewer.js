@@ -329,9 +329,34 @@ export async function createBottleViewer(stage, options = {}) {
     });
     scene.add(gltfScene);
 
-    const bodyMesh = gltfScene.getObjectByName('01 - Corpo azul cônico');
-    if (!bodyMesh?.isMesh) throw new Error('A malha principal do corpo azul não foi encontrada no GLB.');
-    if (!bodyMesh.geometry?.attributes?.uv) throw new Error('O corpo azul não tem coordenadas UV para aplicar a gravação.');
+    const bodyNode = gltfScene.getObjectByName('01 - Corpo azul cônico');
+    // O exportador pode colocar o nome no nó-pai (Group) e a malha real no filho.
+    let bodyMesh = bodyNode?.isMesh ? bodyNode : bodyNode?.getObjectByProperty('isMesh', true);
+
+    const meshCandidates = [];
+    gltfScene.traverse((object) => {
+      if (!object.isMesh || !object.geometry?.attributes?.position) return;
+      object.geometry.computeBoundingBox();
+      const bounds = object.geometry.boundingBox;
+      const height = bounds ? bounds.max.y - bounds.min.y : 0;
+      const vertices = object.geometry.attributes.position.count;
+      meshCandidates.push({ object, height, vertices });
+    });
+
+    // Fallback robusto: o corpo azul é a maior malha vertical da peça.
+    if (!bodyMesh?.isMesh) {
+      meshCandidates.sort((a, b) => (b.height * b.vertices) - (a.height * a.vertices));
+      bodyMesh = meshCandidates[0]?.object || null;
+    }
+
+    if (!bodyMesh?.isMesh) {
+      const names = meshCandidates.map(item => item.object.name || '(malha sem nome)').join(', ');
+      throw new Error('Nenhuma malha utilizável foi encontrada no GLB. Malhas detectadas: ' + names);
+    }
+    if (!bodyMesh.geometry?.attributes?.uv) {
+      const details = meshCandidates.map(item => (item.object.name || '(sem nome)') + ': ' + item.vertices + ' vértices').join('; ');
+      throw new Error('A malha escolhida para o corpo não possui UV para gravação. Malhas: ' + details);
+    }
 
     const bounds = new THREE.Box3().setFromObject(gltfScene);
     const center = bounds.getCenter(new THREE.Vector3());
