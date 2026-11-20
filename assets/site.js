@@ -212,7 +212,7 @@
     try {
       const { createBottleViewer } = await import('./bottle-viewer.js');
       if (generation !== bottleViewerGeneration || !$('#customModal').classList.contains('open')) return;
-      const viewer = createBottleViewer(stage, { customization: currentBottleCustomization() });
+      const viewer = await createBottleViewer(stage, { customization: currentBottleCustomization() });
       if (generation !== bottleViewerGeneration || !$('#customModal').classList.contains('open')) { viewer.dispose(); return; }
       bottleViewer = viewer;
       viewer.update(currentBottleCustomization());
