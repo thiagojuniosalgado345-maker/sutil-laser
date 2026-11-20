@@ -24,6 +24,7 @@
     toast.timer = window.setTimeout(() => el.classList.remove('show'), 3300);
   }
   function validExternalUrl(value, fallback='') {
+    if (typeof value !== 'string' || !value.trim()) return fallback;
     try {
       const u = new URL(value, location.href);
       return ['https:'].includes(u.protocol) ? u.href : fallback;
@@ -208,6 +209,7 @@
       return;
     }
     const instagram = validExternalUrl(settings.instagram_url,'https://www.instagram.com/');
+    const opened = window.open(instagram,'_blank','noopener,noreferrer');
     let copied = false;
     try {
       if (navigator.clipboard?.writeText) {
@@ -215,7 +217,6 @@
         copied = true;
       }
     } catch (error) { console.warn('Área de transferência indisponível',error); }
-    window.open(instagram,'_blank','noopener,noreferrer');
     toast(copied ? 'Resumo copiado. Cole no direct e anexe sua arte, se houver.' : 'Envie os detalhes que aparecem no personalizador pelo direct.');
   }
   $('#filters').addEventListener('click',event => {
