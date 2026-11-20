@@ -22,7 +22,7 @@ jobs:
           node-version: 20
       - name: Check JavaScript syntax
         run: |
-          node --input-type=module --check < assets/site.js
+          node --check assets/site.js
           node --input-type=module --check < assets/bottle-viewer.js
           node --check assets/admin.js
           node --check config.js
