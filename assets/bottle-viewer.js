@@ -1,265 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const SEGMENTS = 160;
 const TEXTURE_WIDTH = 2048;
 const TEXTURE_HEIGHT = 1024;
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-
-function makePowderCoatTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 1024;
-  const context = canvas.getContext('2d');
-  const gradient = context.createLinearGradient(0, 0, 1024, 0);
-  gradient.addColorStop(0, '#101a5b');
-  gradient.addColorStop(0.14, '#202d83');
-  gradient.addColorStop(0.35, '#26368e');
-  gradient.addColorStop(0.56, '#1e2d7c');
-  gradient.addColorStop(0.78, '#14205f');
-  gradient.addColorStop(1, '#0e174e');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 1024, 1024);
-
-  // Microtextura sutil de pintura eletrostática fosca.
-  let seed = 41327;
-  const random = () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-  for (let index = 0; index < 21000; index += 1) {
-    const x = random() * 1024;
-    const y = random() * 1024;
-    const alpha = 0.018 + random() * 0.055;
-    const radius = 0.25 + random() * 1.05;
-    context.fillStyle = random() > 0.5
-      ? 'rgba(255,255,255,' + alpha + ')'
-      : 'rgba(0,0,15,' + alpha + ')';
-    context.beginPath();
-    context.arc(x, y, radius, 0, Math.PI * 2);
-    context.fill();
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 8;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  return texture;
-}
-
-function makeBrushedSteelTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 512;
-  const context = canvas.getContext('2d');
-  const gradient = context.createLinearGradient(0, 0, 1024, 0);
-  gradient.addColorStop(0, '#626966');
-  gradient.addColorStop(0.12, '#c5cac5');
-  gradient.addColorStop(0.25, '#858d89');
-  gradient.addColorStop(0.42, '#f1f2ed');
-  gradient.addColorStop(0.57, '#aeb5b0');
-  gradient.addColorStop(0.73, '#eef0eb');
-  gradient.addColorStop(0.88, '#8c9490');
-  gradient.addColorStop(1, '#555e5a');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  let seed = 91273;
-  const random = () => {
-    seed = (seed * 1103515245 + 12345) >>> 0;
-    return seed / 4294967296;
-  };
-  for (let index = 0; index < 8000; index += 1) {
-    const y = random() * canvas.height;
-    const alpha = 0.018 + random() * 0.10;
-    context.fillStyle = random() > 0.52
-      ? 'rgba(255,255,255,' + alpha + ')'
-      : 'rgba(24,31,29,' + alpha + ')';
-    context.fillRect(0, y, canvas.width, 0.35 + random() * 0.7);
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 8;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  return texture;
-}
-
-function makeRoughnessTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 256;
-  const context = canvas.getContext('2d');
-  context.fillStyle = '#777777';
-  context.fillRect(0, 0, 512, 256);
-  let seed = 60217;
-  for (let index = 0; index < 3600; index += 1) {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    const x = seed / 4294967296 * 512;
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    const y = seed / 4294967296 * 256;
-    const tone = 100 + (seed % 75);
-    context.fillStyle = 'rgb(' + tone + ',' + tone + ',' + tone + ')';
-    context.fillRect(x, y, 0.4, 256);
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.NoColorSpace;
-  texture.anisotropy = 8;
-  return texture;
-}
-
-function createLatheMesh(profile, material, name) {
-  const points = profile.map(([radius, height]) => new THREE.Vector2(radius, height));
-  const geometry = new THREE.LatheGeometry(points, SEGMENTS, 0, Math.PI * 2);
-  geometry.computeVertexNormals();
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = name;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  return mesh;
-}
-
-function createHorizontalRing(radius, tube, y, material, name) {
-  const mesh = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 20, 160), material);
-  mesh.name = name;
-  mesh.rotation.x = Math.PI / 2;
-  mesh.position.y = y;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  return mesh;
-}
-
-function createLid(handleMaterial) {
-  const group = new THREE.Group();
-  group.name = 'Tampa preta com pega';
-
-  const skirt = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.105, 1.105, 0.19, SEGMENTS, 1, false),
-    handleMaterial
-  );
-  skirt.position.y = 3.48;
-  skirt.castShadow = true;
-  group.add(skirt);
-
-  const upperDisk = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.025, 1.075, 0.10, SEGMENTS, 1, false),
-    handleMaterial
-  );
-  upperDisk.position.y = 3.615;
-  upperDisk.castShadow = true;
-  group.add(upperDisk);
-
-  group.add(createHorizontalRing(1.09, 0.052, 3.475, handleMaterial, 'Aro externo da tampa'));
-  group.add(createHorizontalRing(0.96, 0.022, 3.67, handleMaterial, 'Friso superior da tampa'));
-
-  // Alça curta moldada no topo, com cantos suaves, como a peça da referência.
-  const loopPoints = [
-    new THREE.Vector3(-0.34, 3.64, -0.035),
-    new THREE.Vector3(-0.34, 3.81, -0.035),
-    new THREE.Vector3(-0.27, 3.89, -0.035),
-    new THREE.Vector3(0.27, 3.89, -0.035),
-    new THREE.Vector3(0.34, 3.81, -0.035),
-    new THREE.Vector3(0.34, 3.64, -0.035)
-  ];
-  const loopCurve = new THREE.CatmullRomCurve3(loopPoints, false, 'centripetal');
-  const loop = new THREE.Mesh(new THREE.TubeGeometry(loopCurve, 64, 0.052, 16, false), handleMaterial);
-  loop.name = 'Alça elevada da tampa';
-  loop.castShadow = true;
-  group.add(loop);
-
-  for (const x of [-0.34, 0.34]) {
-    const mount = new THREE.Mesh(new THREE.SphereGeometry(0.057, 24, 16), handleMaterial);
-    mount.position.set(x, 3.66, -0.035);
-    mount.castShadow = true;
-    group.add(mount);
-  }
-  return group;
-}
-
-function createBottleMesh() {
-  const blueTexture = makePowderCoatTexture();
-  const steelTexture = makeBrushedSteelTexture();
-  const steelRoughness = makeRoughnessTexture();
-
-  const blueMaterial = new THREE.MeshPhysicalMaterial({
-    map: blueTexture,
-    color: 0xffffff,
-    metalness: 0.16,
-    roughness: 0.39,
-    clearcoat: 0.20,
-    clearcoatRoughness: 0.42
-  });
-  const steelMaterial = new THREE.MeshPhysicalMaterial({
-    map: steelTexture,
-    roughnessMap: steelRoughness,
-    color: 0xffffff,
-    metalness: 0.91,
-    roughness: 0.30,
-    clearcoat: 0.12,
-    clearcoatRoughness: 0.25,
-    anisotropy: 0.72
-  });
-  const blackMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x101114,
-    metalness: 0.12,
-    roughness: 0.27,
-    clearcoat: 0.34,
-    clearcoatRoughness: 0.22
-  });
-  const darkTrimMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x050609,
-    metalness: 0.08,
-    roughness: 0.23,
-    clearcoat: 0.42
-  });
-
-  const bottle = new THREE.Group();
-  bottle.name = 'Garrafa térmica azul';
-
-  const baseBand = createLatheMesh([
-    [0.716, 0.075], [0.725, 0.095], [0.735, 0.13], [0.744, 0.20],
-    [0.765, 0.39], [0.793, 0.49], [0.802, 0.535], [0.785, 0.56]
-  ], steelMaterial, 'Faixa inferior em aço inox');
-  bottle.add(baseBand);
-
-  const blueBody = createLatheMesh([
-    [0.775, 0.445], [0.785, 0.485], [0.802, 0.56], [0.825, 0.72],
-    [0.845, 0.92], [0.885, 1.38], [0.935, 1.92], [0.985, 2.43],
-    [1.015, 2.76], [1.024, 2.88], [1.019, 2.96], [1.004, 3.005]
-  ], blueMaterial, '01 - Corpo azul cônico');
-  bottle.add(blueBody);
-
-  const topSteelBand = createLatheMesh([
-    [1.027, 2.91], [1.032, 2.96], [1.043, 3.04], [1.065, 3.17],
-    [1.077, 3.34], [1.101, 3.48], [1.101, 3.515], [1.078, 3.535],
-    [1.03, 3.525], [1.013, 3.48]
-  ], steelMaterial, 'Faixa superior larga em aço inox');
-  bottle.add(topSteelBand);
-
-  bottle.add(createHorizontalRing(0.79, 0.020, 0.115, steelMaterial, 'Vinco inferior'));
-  bottle.add(createHorizontalRing(1.096, 0.025, 3.49, steelMaterial, 'Borda superior polida'));
-
-  // Pequeno acabamento escuro entre o corpo colorido e o aro da tampa.
-  const seal = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.105, 1.095, 0.055, SEGMENTS, 1, false),
-    darkTrimMaterial
-  );
-  seal.name = 'Vedação escura sob a tampa';
-  seal.position.y = 3.535;
-  bottle.add(seal);
-
-  bottle.add(createLid(blackMaterial));
-
-  return {
-    group: bottle,
-    bodyMesh: blueBody,
-    materials: [blueMaterial, steelMaterial, blackMaterial, darkTrimMaterial],
-    textures: [blueTexture, steelTexture, steelRoughness]
-  };
-}
 
 function makeContactShadow() {
   const canvas = document.createElement('canvas');
@@ -378,13 +125,6 @@ function makePersonalizationOverlay(bodyMesh, renderer) {
   const uv = geometry.attributes.uv;
   if (!uv) throw new Error('A malha não contém coordenadas UV para a gravação.');
 
-  // A costura do LatheGeometry fica na parte de trás. O deslocamento de meio giro
-  // posiciona o centro da textura exatamente na face frontal da garrafa.
-  for (let index = 0; index < uv.count; index += 1) {
-    uv.setX(index, (uv.getX(index) + 0.5) % 1);
-  }
-  uv.needsUpdate = true;
-
   const positions = geometry.attributes.position;
   const normals = geometry.attributes.normal;
   if (!normals) geometry.computeVertexNormals();
@@ -449,32 +189,19 @@ function makePersonalizationOverlay(bodyMesh, renderer) {
   };
 }
 
-export function createBottleViewer(stage, options = {}) {
+export async function createBottleViewer(stage, options = {}) {
   if (!stage) throw new Error('Área do visualizador não encontrada.');
   const canvas = stage.querySelector('#bottle3dCanvas');
   if (!canvas) throw new Error('Canvas 3D não encontrado.');
 
-  let renderer;
-  let controls;
-  let observer;
-  let environmentTarget;
-  let pmremGenerator;
-  let shadowTexture;
-  let personalization;
-  let bottleParts;
-  let disposed = false;
-  let visibilityHandler;
-  let scene;
+  let renderer, controls, observer, environmentTarget, pmremGenerator, shadowTexture;
+  let gltfScene, personalization, disposed = false, visibilityHandler, scene;
   let animationActive = false;
 
   try {
     renderer = new THREE.WebGLRenderer({
-      canvas,
-      alpha: false,
-      antialias: true,
-      powerPreference: 'high-performance',
-      depth: true,
-      stencil: false
+      canvas, alpha: false, antialias: true, powerPreference: 'high-performance',
+      depth: true, stencil: false
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -489,7 +216,7 @@ export function createBottleViewer(stage, options = {}) {
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xe9e4d9);
-    scene.environmentIntensity = 1.15;
+    scene.environmentIntensity = 1.18;
 
     pmremGenerator = new THREE.PMREMGenerator(renderer);
     const room = new RoomEnvironment();
@@ -500,14 +227,11 @@ export function createBottleViewer(stage, options = {}) {
     pmremGenerator = null;
 
     const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 100);
-    camera.position.set(2.15, 2.65, 7.65);
-    const target = new THREE.Vector3(0, 2.02, 0);
+    camera.position.set(2.15, 2.62, 7.7);
 
-    const hemi = new THREE.HemisphereLight(0xfff8ec, 0x343b55, 1.45);
-    scene.add(hemi);
-
-    const key = new THREE.DirectionalLight(0xfff2df, 3.4);
-    key.position.set(-4.2, 7, 5.4);
+    scene.add(new THREE.HemisphereLight(0xfff8ec, 0x343b55, 1.4));
+    const key = new THREE.DirectionalLight(0xfff2df, 3.35);
+    key.position.set(-4.2, 7.2, 5.5);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
     key.shadow.camera.near = 0.1;
@@ -519,19 +243,16 @@ export function createBottleViewer(stage, options = {}) {
     key.shadow.bias = -0.0002;
     scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0xffffff, 1.65);
+    const fill = new THREE.DirectionalLight(0xffffff, 1.55);
     fill.position.set(5, 4, 3);
     scene.add(fill);
-    const rim = new THREE.DirectionalLight(0x9fb7ff, 1.6);
+    const rim = new THREE.DirectionalLight(0xa8bbff, 1.5);
     rim.position.set(-4, 3.7, -5);
     scene.add(rim);
 
-    bottleParts = createBottleMesh();
-    scene.add(bottleParts.group);
-
     shadowTexture = makeContactShadow();
     const shadow = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.8, 2.2),
+      new THREE.PlaneGeometry(3.8, 2.25),
       new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, depthWrite: false })
     );
     shadow.rotation.x = -Math.PI / 2;
@@ -541,18 +262,41 @@ export function createBottleViewer(stage, options = {}) {
 
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(200, 200),
-      new THREE.MeshStandardMaterial({ color: 0xe9e4d9, roughness: 0.96 })
+      new THREE.MeshStandardMaterial({ color: 0xe9e4d9, roughness: 0.96, metalness: 0 })
     );
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0.005;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    personalization = makePersonalizationOverlay(bottleParts.bodyMesh, renderer);
-    personalization.update(options.customization || {});
+    const loader = new GLTFLoader();
+    const gltf = await loader.loadAsync(options.assetUrl || 'assets/models/garrafa-termica-azul.glb');
+    if (disposed) throw new Error('Visualização encerrada durante o carregamento.');
+    gltfScene = gltf.scene;
+    gltfScene.traverse((object) => {
+      if (!object.isMesh) return;
+      object.castShadow = true;
+      object.receiveShadow = true;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.filter(Boolean).forEach((material) => {
+        material.envMapIntensity = 1.12;
+        ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap'].forEach((key) => {
+          const texture = material[key];
+          if (texture?.isTexture) texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+        });
+        material.needsUpdate = true;
+      });
+    });
+    scene.add(gltfScene);
 
+    const bodyMesh = gltfScene.getObjectByName('01 - Corpo azul cônico');
+    if (!bodyMesh?.isMesh) throw new Error('A malha principal do corpo azul não foi encontrada no GLB.');
+    if (!bodyMesh.geometry?.attributes?.uv) throw new Error('O corpo azul não tem coordenadas UV para aplicar a gravação.');
+
+    const bounds = new THREE.Box3().setFromObject(gltfScene);
+    const center = bounds.getCenter(new THREE.Vector3());
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.copy(target);
+    controls.target.copy(center);
     controls.enableDamping = true;
     controls.dampingFactor = 0.065;
     controls.enablePan = false;
@@ -561,19 +305,19 @@ export function createBottleViewer(stage, options = {}) {
     controls.zoomToCursor = true;
     controls.rotateSpeed = 0.72;
     controls.zoomSpeed = 0.75;
-    controls.minDistance = 4.4;
+    controls.minDistance = 4.3;
     controls.maxDistance = 10.5;
     controls.minPolarAngle = 0.18;
     controls.maxPolarAngle = Math.PI - 0.18;
     controls.update();
 
-    const render = () => {
-      if (disposed) return;
-      renderer.render(scene, camera);
-    };
+    personalization = makePersonalizationOverlay(bodyMesh, renderer);
+    personalization.update(options.customization || {});
+
+    const render = () => { if (!disposed) renderer.render(scene, camera); };
     const animate = () => {
       if (disposed || document.hidden) return;
-      if (controls.enableDamping) controls.update();
+      controls.update();
       renderer.render(scene, camera);
     };
     renderer.setAnimationLoop(animate);
@@ -601,7 +345,7 @@ export function createBottleViewer(stage, options = {}) {
     return {
       update(customization) {
         if (disposed || !personalization) return;
-        personalization.update(customization);
+        personalization.update(customization || {});
         render();
       },
       rotateBy(degrees) {
@@ -620,17 +364,18 @@ export function createBottleViewer(stage, options = {}) {
         if (animationActive) renderer?.setAnimationLoop(null);
         controls?.dispose();
         personalization?.dispose();
-        scene?.traverse((object) => {
+        gltfScene?.traverse((object) => {
           if (!object.isMesh) return;
           object.geometry?.dispose();
           const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.filter(Boolean).forEach((material) => material.dispose?.());
+          materials.filter(Boolean).forEach((material) => {
+            Object.values(material).forEach((value) => { if (value?.isTexture) value.dispose(); });
+            material.dispose?.();
+          });
         });
-        bottleParts?.textures.forEach(texture => texture.dispose());
-        bottleParts?.materials.forEach(material => material.dispose());
+        scene?.clear();
         shadowTexture?.dispose();
         environmentTarget?.texture?.dispose();
-        scene?.clear();
         renderer?.dispose();
       }
     };
@@ -639,14 +384,18 @@ export function createBottleViewer(stage, options = {}) {
     controls?.dispose();
     personalization?.dispose();
     renderer?.setAnimationLoop(null);
-    if (scene) {
-      scene.traverse((object) => {
-        if (object.isMesh) object.geometry?.dispose();
+    if (gltfScene) {
+      gltfScene.traverse((object) => {
+        if (!object.isMesh) return;
+        object.geometry?.dispose();
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.filter(Boolean).forEach((material) => {
+          Object.values(material).forEach((value) => { if (value?.isTexture) value.dispose(); });
+          material.dispose?.();
+        });
       });
-      scene.clear();
     }
-    bottleParts?.textures.forEach(texture => texture.dispose());
-    bottleParts?.materials.forEach(material => material.dispose());
+    scene?.clear();
     shadowTexture?.dispose();
     environmentTarget?.texture?.dispose();
     pmremGenerator?.dispose();
