@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install model builder
-        run: python -m pip install --upgrade pip numpy pillow trimesh
+        run: python -m pip install --upgrade pip numpy pillow trimesh scipy
       - name: Build and validate GLB
         run: python scripts/build_sutil_bottle.py
       - name: Commit generated model
