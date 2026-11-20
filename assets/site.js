@@ -18,6 +18,11 @@
   let bottleViewer = null;
   let bottleViewerGeneration = 0;
   let logoImageElement = null;
+  window.__SUTIL_3D_STATUS = { state: 'idle', updatedAt: Date.now() };
+  function set3DStatus(state, detail = {}) {
+    window.__SUTIL_3D_STATUS = { state, updatedAt: Date.now(), ...detail };
+    window.dispatchEvent(new CustomEvent('sutil:3d-status', { detail: window.__SUTIL_3D_STATUS }));
+  }
   const REFERENCE_BOTTLE = {
     id:'garrafa-termica-azul',
     name:'Garrafa térmica azul com tampa',
@@ -213,6 +218,7 @@
   async function initializeBottle3D() {
     const stage = $('#model3d');
     const generation = ++bottleViewerGeneration;
+    set3DStatus('loading', { message: 'Carregando bibliotecas e modelo 3D' });
     try {
       const { createBottleViewer } = await import(new URL('assets/bottle-viewer.js', document.baseURI).href);
       if (generation !== bottleViewerGeneration || !$('#customModal').classList.contains('open')) return;
@@ -222,18 +228,23 @@
       viewer.update(currentBottleCustomization());
       const loading = $('#bottle3dLoading');
       if (loading) loading.hidden = true;
+      set3DStatus('ready', { message: 'Modelo 3D renderizado', renderer: 'WebGL2' });
     } catch (error) {
       console.error('Falha ao iniciar o visualizador 3D:', error);
       if (generation !== bottleViewerGeneration) return;
       destroyBottle3D();
-      stage.hidden = true;
-      const previewImage = $('#previewImage');
-      const hasImage = Boolean(previewImage.getAttribute('src'));
-      previewImage.hidden = !hasImage;
-      $('#stagePlaceholder').hidden = hasImage;
-      $('#engravingOverlay').classList.remove('on-3d-model');
+      set3DStatus('error', {
+        name: error?.name || 'Error',
+        message: error?.message || String(error),
+        stage: 'initialize'
+      });
+      stage.hidden = false;
+      stage.classList.add('bottle-viewer-failed');
+      stage.innerHTML = '<div class="bottle-3d-error"><strong>Não foi possível carregar o modelo 3D.</strong><span class="bottle-3d-error-detail"></span><button type="button" id="retryBottle3D" class="button secondary">Tentar novamente</button></div>';
+      stage.querySelector('.bottle-3d-error-detail').textContent = (error?.message || 'Falha desconhecida') + ' · Verifique a conexão e tente novamente.';
+      $('#previewImage').hidden = true;
+      $('#stagePlaceholder').hidden = true;
       $('#model3dControls').hidden = true;
-      toast('O 3D não pôde ser iniciado neste aparelho. A foto original continua disponível.');
     }
   }
   function rotateModelBy(degrees) { bottleViewer?.rotateBy(degrees); }
@@ -434,6 +445,14 @@
     if (product) openCustomizer(product);
   });
   $('#customText').addEventListener('input',updatePreview);
+  $('#model3d').addEventListener('click', event => {
+    if (!event.target.closest('#retryBottle3D')) return;
+    const stage = $('#model3d');
+    stage.classList.remove('bottle-viewer-failed');
+    stage.innerHTML = build3DModel();
+    $('#model3dControls').hidden = false;
+    initializeBottle3D();
+  });
   $('#modelRotateLeft').addEventListener('click',()=>rotateModelBy(-30));
   $('#modelRotateRight').addEventListener('click',()=>rotateModelBy(30));
   $('#clearCustomLogo').addEventListener('click',clearCustomLogo);
