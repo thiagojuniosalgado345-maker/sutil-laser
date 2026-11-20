@@ -23,6 +23,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check assets/site.js
+          node --check scripts/test-bottle-viewer.mjs
           node --input-type=module --check < assets/bottle-viewer.js
           node --check assets/admin.js
           node --check config.js
