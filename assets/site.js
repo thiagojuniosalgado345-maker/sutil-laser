@@ -1,3 +1,5 @@
+import { createBottleViewer } from './bottle-viewer.js';
+
 (() => {
   'use strict';
   const $ = (selector, root=document) => root.querySelector(selector);
@@ -15,11 +17,9 @@
   let selectedProduct = null;
   let quoteItems = [];
   let logoObjectUrl = null;
-  let modelRotation = 0;
-  let modelTilt = -5;
-  let draggingModel = false;
-  let dragStart = null;
-  let bottleRenderer=null, bottleScene=null, bottleCamera=null, bottleRoot=null, bottleDecalCanvas=null, bottleDecalContext=null, bottleDecalTexture=null, bottleLogoImage=null;
+  let bottleViewer = null;
+  let bottleViewerGeneration = 0;
+  let logoImageElement = null;
   const REFERENCE_BOTTLE = {
     id:'garrafa-termica-azul',
     name:'Garrafa térmica azul com tampa',
@@ -32,8 +32,24 @@
     featured:true, active:true, sort_order:-1000
   };
   function ensureReferenceBottle(list) {
-    const exists = list.some(p => String(p.id)===REFERENCE_BOTTLE.id);
-    return exists ? list : [REFERENCE_BOTTLE,...list];
+    const match = list.find(p =>
+      String(p.id) === REFERENCE_BOTTLE.id ||
+      String(p.name || '').trim().toLocaleLowerCase('pt-BR') === REFERENCE_BOTTLE.name.toLocaleLowerCase('pt-BR')
+    );
+    if (!match) return [REFERENCE_BOTTLE, ...list];
+    return list.map(product => product === match ? {
+      ...REFERENCE_BOTTLE,
+      ...product,
+      image_url: product.image_url || product.image || REFERENCE_BOTTLE.image_url,
+      model_type: 'bottle',
+      personalization: { ...REFERENCE_BOTTLE.personalization, ...(product.personalization || {}) }
+    } : product);
+  }
+  function isReferenceBottle(product) {
+    return Boolean(product && (
+      String(product.id) === REFERENCE_BOTTLE.id ||
+      String(product.name || '').trim().toLocaleLowerCase('pt-BR') === REFERENCE_BOTTLE.name.toLocaleLowerCase('pt-BR')
+    ));
   }
 
   function toast(message) {
@@ -174,217 +190,100 @@
     if (/copo|caneca/.test(name)) return 'cup';
     return 'other';
   }
-  function build3DModel(type) {
-    if (type === 'bottle') return '<canvas id="bottle3dCanvas" class="bottle-3d-canvas" aria-label="Garrafa térmica em modelo tridimensional interativo"></canvas><div class="bottle-3d-hint">Arraste a garrafa para girar · modelo 3D real</div>';
-    const shape = type === 'goblet' ? 'model-goblet' : 'model-cup';
-    return '<div class="model-3d-shadow"></div><div class="model-3d-object '+shape+'" id="modelObject" aria-label="Modelo tridimensional ilustrativo do produto"><div class="model-back"></div><div class="model-side"></div><div class="model-front"><div class="model-rim"></div><img class="model-logo" alt="" hidden><div class="model-engraving" id="modelEngraving"></div><div class="model-base"></div></div></div><div class="model-3d-hint">Arraste para girar · prévia ilustrativa</div>';
+  function currentBottleCustomization() {
+    return {
+      text: $('#customText').value.trim(),
+      font: $('#customFont').value,
+      color: $('#customColor').value,
+      size: Number($('#customSize').value),
+      positionY: Number($('#customPosition').value),
+      positionX: Number($('#customPositionX').value),
+      logoImage: logoImageElement
+    };
   }
-  function update3DModel() {
-    const object = $('#modelObject');
-    if (object) object.style.transform = 'translate(-50%,-50%) rotateX('+modelTilt+'deg) rotateY('+modelRotation+'deg)';
-    if (bottleRenderer && bottleScene && bottleCamera) bottleRenderer.render(bottleScene,bottleCamera);
-  }
-  function rotateModelBy(delta) {
-    if (bottleRoot) {
-      bottleRoot.rotation.y += THREE.MathUtils.degToRad(delta);
-      update3DModel();
-      return;
-    }
-    modelRotation = (modelRotation + delta) % 360;
-    update3DModel();
-  }
-  function finishTexture(kind) {
-    const canvas=document.createElement('canvas');
-    canvas.width=1024; canvas.height=1024;
-    const ctx=canvas.getContext('2d');
-    if(kind==='blue') {
-      const gradient=ctx.createLinearGradient(0,0,1024,0);
-      gradient.addColorStop(0,'#15205f'); gradient.addColorStop(.22,'#27358f'); gradient.addColorStop(.52,'#202b78'); gradient.addColorStop(.78,'#111b59'); gradient.addColorStop(1,'#1d286f');
-      ctx.fillStyle=gradient; ctx.fillRect(0,0,1024,1024);
-      const img=ctx.getImageData(0,0,1024,1024);
-      for(let i=0;i<img.data.length;i+=4){const n=(Math.random()-.5)*12;img.data[i]+=n;img.data[i+1]+=n;img.data[i+2]+=n;img.data[i+3]=255;}
-      ctx.putImageData(img,0,0);
-    } else {
-      const g=ctx.createLinearGradient(0,0,1024,0);
-      g.addColorStop(0,'#69716e');g.addColorStop(.18,'#dfe2df');g.addColorStop(.34,'#858d89');g.addColorStop(.50,'#f6f7f2');g.addColorStop(.67,'#a3aaa6');g.addColorStop(.84,'#eceeeb');g.addColorStop(1,'#68716d');
-      ctx.fillStyle=g;ctx.fillRect(0,0,1024,1024);
-      for(let i=0;i<3200;i++){const x=Math.random()*1024;ctx.fillStyle=Math.random()>.5?'rgba(255,255,255,.11)':'rgba(35,41,42,.08)';ctx.fillRect(x,0,Math.random()*.9+.2,1024);}
-    }
-    const texture=new THREE.CanvasTexture(canvas);
-    texture.encoding=THREE.sRGBEncoding;
-    texture.anisotropy=8;
-    return texture;
-  }
-  function addLathe(parent,points,material) {
-    const geometry=new THREE.LatheGeometry(points.map(p=>new THREE.Vector2(p[0],p[1])),128);
-    geometry.computeVertexNormals();
-    const mesh=new THREE.Mesh(geometry,material);
-    mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
-  }
-  function drawBottlePersonalization() {
-    if(!bottleDecalContext||!bottleDecalTexture)return;
-    const c=bottleDecalCanvas,ctx=bottleDecalContext;
-    ctx.clearRect(0,0,c.width,c.height);
-    const text=$('#customText')?.value.trim()||'';
-    const size=Number($('#customSize')?.value||23);
-    const x=c.width*(Number($('#customPositionX')?.value||50)/100);
-    const y=c.height*(Number($('#customPosition')?.value||52)/100);
-    const color=$('#customColor')?.value||'#a98656';
-    const font=$('#customFont')?.value||'serif';
-    if(text){
-      const family=font==='sans'?'Arial, sans-serif':font==='script'?'cursive':'Georgia, serif';
-      ctx.save();ctx.translate(x,y);ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.font='600 '+Math.round(size*3.05)+'px '+family;
-      ctx.shadowColor='rgba(255,255,255,.32)';ctx.shadowBlur=2;
-      ctx.fillText(text,0,0,Math.min(850,c.width*.78));ctx.restore();
-    }
-    if(bottleLogoImage && bottleLogoImage.complete && bottleLogoImage.naturalWidth){
-      const maxW=245,maxH=190,ratio=Math.min(maxW/bottleLogoImage.naturalWidth,maxH/bottleLogoImage.naturalHeight);
-      const w=bottleLogoImage.naturalWidth*ratio,h=bottleLogoImage.naturalHeight*ratio;
-      ctx.drawImage(bottleLogoImage,x-w/2,y-h/2,w,h);
-    }
-    bottleDecalTexture.needsUpdate=true;
-    if(bottleRenderer&&bottleScene&&bottleCamera)bottleRenderer.render(bottleScene,bottleCamera);
+  function build3DModel() {
+    return '<canvas id="bottle3dCanvas" class="bottle-3d-canvas" aria-label="Modelo tridimensional interativo da garrafa térmica azul"></canvas><div class="bottle-3d-loading" id="bottle3dLoading">Preparando o modelo 3D…</div>';
   }
   function destroyBottle3D() {
-    const oldStage=$('#model3d');
-    oldStage?._bottleResizeObserver?.disconnect();
-    if(oldStage) oldStage._bottleResizeObserver=null;
-    if(bottleRenderer){
-      bottleRenderer.dispose();
-      bottleRenderer.forceContextLoss?.();
-    }
-    bottleRenderer=null;bottleScene=null;bottleCamera=null;bottleRoot=null;
-    bottleDecalCanvas=null;bottleDecalContext=null;bottleDecalTexture=null;bottleLogoImage=null;
+    bottleViewerGeneration += 1;
+    if (bottleViewer) { bottleViewer.dispose(); bottleViewer = null; }
   }
   function initializeBottle3D() {
-    const stage=$('#model3d'),canvas=$('#bottle3dCanvas');
-    if(!stage||!canvas)return;
-    if(!window.THREE){
-      stage.classList.remove('bottle-stage');
-      const img=$('#previewImage');
-      if(img?.src){img.hidden=false;$('#stagePlaceholder').hidden=true;}
-      toast('O visualizador 3D não carregou. A foto do produto ficará disponível como alternativa.');
-      return;
-    }
-    destroyBottle3D();
-    try{
-      const width=Math.max(280,stage.clientWidth),height=Math.max(280,stage.clientHeight);
-      bottleRenderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true,powerPreference:'high-performance'});
-      bottleRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-      bottleRenderer.setSize(width,height,false);
-      bottleRenderer.outputEncoding=THREE.sRGBEncoding;
-      bottleRenderer.toneMapping=THREE.ACESFilmicToneMapping;
-      bottleRenderer.toneMappingExposure=1.12;
-      bottleScene=new THREE.Scene();
-      bottleCamera=new THREE.PerspectiveCamera(36,width/height,.1,100);
-      bottleCamera.position.set(2.5,2.8,6.6);
-      bottleCamera.lookAt(0,1.58,0);
-      bottleScene.add(new THREE.HemisphereLight(0xf8f5ed,0x343b56,2.05));
-      const key=new THREE.DirectionalLight(0xfff2dc,3.5);key.position.set(-4,7,6);bottleScene.add(key);
-      const fill=new THREE.DirectionalLight(0xffffff,2.25);fill.position.set(5,4,3);bottleScene.add(fill);
-      const rim=new THREE.DirectionalLight(0x9eb7ff,2.2);rim.position.set(-4,3,-5);bottleScene.add(rim);
-      const front=new THREE.PointLight(0xffffff,18,20);front.position.set(1,4,6);bottleScene.add(front);
-      bottleRoot=new THREE.Group();bottleScene.add(bottleRoot);
-      const shell=new THREE.Group();shell.rotation.y=-Math.PI/2;bottleRoot.add(shell);
-      const blueMap=finishTexture('blue'),steelMap=finishTexture('steel');
-      const blueMat=new THREE.MeshStandardMaterial({map:blueMap,color:0xffffff,metalness:.22,roughness:.39});
-      const steelMat=new THREE.MeshStandardMaterial({map:steelMap,bumpMap:steelMap,bumpScale:.009,metalness:.86,roughness:.235});
-      const blackMat=new THREE.MeshStandardMaterial({color:0x101114,metalness:.12,roughness:.27});
-      const darkMat=new THREE.MeshStandardMaterial({color:0x050607,metalness:.06,roughness:.34});
-      addLathe(shell,[[.695,.10],[.70,.15],[.70,.42],[.735,.54],[.77,.62],[.77,.66]],steelMat);
-      const blueBody=addLathe(shell,[[.70,.48],[.715,.54],[.77,.62],[.82,.72],[.94,2.42],[.96,2.52],[.955,2.58]],blueMat);
-      addLathe(shell,[[.94,2.43],[.98,2.47],[1.0,2.55],[1.035,2.83],[1.03,2.90],[.97,2.91],[.955,2.84],[.955,2.53]],steelMat);
-      const lowerLip=new THREE.Mesh(new THREE.TorusGeometry(.715,.035,16,100),steelMat);lowerLip.rotation.x=Math.PI/2;lowerLip.position.y=.17;shell.add(lowerLip);
-      const lidBand=new THREE.Mesh(new THREE.CylinderGeometry(1.045,1.045,.16,128),blackMat);lidBand.position.y=2.94;lidBand.castShadow=true;shell.add(lidBand);
-      const lidRim=new THREE.Mesh(new THREE.TorusGeometry(1.035,.055,20,120),darkMat);lidRim.rotation.x=Math.PI/2;lidRim.position.y=2.91;shell.add(lidRim);
-      const lidTop=new THREE.Mesh(new THREE.CylinderGeometry(.94,.98,.075,128),blackMat);lidTop.position.y=3.055;shell.add(lidTop);
-      const tab=new THREE.Mesh(new THREE.BoxGeometry(.68,.105,.22),blackMat);tab.position.set(0,3.13,-.14);tab.castShadow=true;shell.add(tab);
-      const tabLeft=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.18,24),blackMat);tabLeft.rotation.z=Math.PI/2;tabLeft.position.set(-.25,3.08,-.14);shell.add(tabLeft);
-      const tabRight=tabLeft.clone();tabRight.position.x=.25;shell.add(tabRight);
-      const decalCanvas=document.createElement('canvas');decalCanvas.width=1024;decalCanvas.height=1024;
-      bottleDecalCanvas=decalCanvas;bottleDecalContext=decalCanvas.getContext('2d');
-      bottleDecalTexture=new THREE.CanvasTexture(decalCanvas);bottleDecalTexture.encoding=THREE.sRGBEncoding;bottleDecalTexture.anisotropy=8;
-      const decalMat=new THREE.MeshBasicMaterial({map:bottleDecalTexture,transparent:true,side:THREE.DoubleSide,depthWrite:false,toneMapped:false});
-      const decal=new THREE.Mesh(new THREE.CylinderGeometry(.962,.824,1.89,128,1,true,Math.PI/2-.57,1.14),decalMat);
-      decal.position.y=1.55;decal.renderOrder=3;shell.add(decal);
-      // Uma sombra suave de estúdio mantém a garrafa ancorada no palco.
-      const shadowCanvas=document.createElement('canvas');shadowCanvas.width=256;shadowCanvas.height=256;
-      const sctx=shadowCanvas.getContext('2d'),grad=sctx.createRadialGradient(128,128,8,128,128,122);
-      grad.addColorStop(0,'rgba(28,27,25,.28)');grad.addColorStop(1,'rgba(28,27,25,0)');
-      sctx.fillStyle=grad;sctx.fillRect(0,0,256,256);
-      const shadow=new THREE.Mesh(new THREE.PlaneGeometry(3.5,2.0),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shadowCanvas),transparent:true,depthWrite:false}));
-      shadow.rotation.x=-Math.PI/2;shadow.position.y=.045;bottleScene.add(shadow);
-      const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xe9e4d9,roughness:.95}));
-      floor.rotation.x=-Math.PI/2;floor.position.y=.025;floor.receiveShadow=true;bottleScene.add(floor);
-      bottleRoot.rotation.set(-.035,-.24,0);
-      const resize=()=>{
-        if(!bottleRenderer||!bottleCamera)return;
-        const w=Math.max(280,stage.clientWidth),h=Math.max(280,stage.clientHeight);
-        bottleRenderer.setSize(w,h,false);bottleCamera.aspect=w/h;bottleCamera.updateProjectionMatrix();
-        bottleRenderer.render(bottleScene,bottleCamera);
-      };
-      if(window.ResizeObserver){const observer=new ResizeObserver(resize);observer.observe(stage);stage._bottleResizeObserver=observer;}
-      const onDown=e=>{if(e.button!==undefined&&e.button!==0)return;canvas.setPointerCapture(e.pointerId);dragStart={x:e.clientX,y:e.clientY,rx:bottleRoot.rotation.x,ry:bottleRoot.rotation.y};};
-      const onMove=e=>{if(!dragStart)return;bottleRoot.rotation.y=dragStart.ry+(e.clientX-dragStart.x)*.012;bottleRoot.rotation.x=Math.max(-.35,Math.min(.35,dragStart.rx+(e.clientY-dragStart.y)*.006));bottleRenderer.render(bottleScene,bottleCamera);};
-      const onUp=()=>{dragStart=null;};
-      canvas.addEventListener('pointerdown',onDown);canvas.addEventListener('pointermove',onMove);
-      ['pointerup','pointercancel','lostpointercapture'].forEach(type=>canvas.addEventListener(type,onUp));
-      drawBottlePersonalization();
-      bottleRenderer.render(bottleScene,bottleCamera);
-      stage.classList.add('bottle-stage');
-    }catch(error){
-      console.error('Falha ao iniciar o modelo 3D:',error);
+    const stage = $('#model3d');
+    const generation = ++bottleViewerGeneration;
+    try {
+      const viewer = createBottleViewer(stage, { customization: currentBottleCustomization() });
+      if (generation !== bottleViewerGeneration || !$('#customModal').classList.contains('open')) { viewer.dispose(); return; }
+      bottleViewer = viewer;
+      viewer.update(currentBottleCustomization());
+      const loading = $('#bottle3dLoading');
+      if (loading) loading.hidden = true;
+    } catch (error) {
+      console.error('Falha ao iniciar o visualizador 3D:', error);
+      if (generation !== bottleViewerGeneration) return;
       destroyBottle3D();
-      const img=$('#previewImage');
-      if(img?.src){img.hidden=false;$('#stagePlaceholder').hidden=true;}
-      toast('Não foi possível iniciar o 3D neste navegador. A foto continua disponível.');
+      stage.hidden = true;
+      const previewImage = $('#previewImage');
+      const hasImage = Boolean(previewImage.getAttribute('src'));
+      previewImage.hidden = !hasImage;
+      $('#stagePlaceholder').hidden = hasImage;
+      $('#engravingOverlay').classList.remove('on-3d-model');
+      $('#model3dControls').hidden = true;
+      toast('O 3D não pôde ser iniciado neste aparelho. A foto original continua disponível.');
     }
   }
+  function rotateModelBy(degrees) { bottleViewer?.rotateBy(degrees); }
+  function update3DModel() { bottleViewer?.update(currentBottleCustomization()); }
 
   function openCustomizer(product) {
+    destroyBottle3D();
     selectedProduct = product;
     $('#modalTitle').textContent = product.name;
     $('#customText').value = '';
     $('#customLogo').value = '';
     if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
-    logoObjectUrl = null;
-    $('#logoPreview').hidden = true;
-    $('#textPreview').textContent = 'Seu nome';
+    logoObjectUrl = null; logoImageElement = null;
+    $('#logoPreview').removeAttribute('src'); $('#logoPreview').hidden = true;
+    $('#textPreview').textContent = '';
     $('#textPreview').style.fontFamily = 'var(--serif)';
     $('#textPreview').style.fontSize = '23px';
-    $('#textPreview').style.color = '#a98656';
+    $('#textPreview').style.color = '#d7d9d5';
     $('#customFont').value = 'serif';
-    $('#customColor').value = '#a98656';
+    $('#customColor').value = '#d7d9d5';
     $('#customSize').value = '23';
     $('#customPosition').value = '52';
     $('#customPositionX').value = '50';
     $('#customQuantity').value = '1';
+
     const image = product.image_url || (Array.isArray(product.gallery) && product.gallery[0]) || '';
     const previewImage = $('#previewImage');
-    const modelType = resolveModelType(product);
     const modelStage = $('#model3d');
-    const use3D = modelType !== 'other';
-    destroyBottle3D();
-    bottleLogoImage = null;
-    modelStage.hidden = !use3D;
-    previewImage.hidden = !image;
-    if (use3D) {
-      modelStage.dataset.type = modelType;
-      modelStage.innerHTML = build3DModel(modelType);
-      modelRotation = -18; modelTilt = -5;
-      update3DModel();
+    const is3DBottle = isReferenceBottle(product);
+    const controls = $('#model3dControls');
+    modelStage.hidden = !is3DBottle;
+    controls.hidden = !is3DBottle;
+    $('#engravingOverlay').classList.toggle('on-3d-model', is3DBottle);
+    previewImage.onload = () => {
+      if (!is3DBottle) previewImage.hidden = false;
       $('#stagePlaceholder').hidden = true;
-      if(modelType==='bottle') requestAnimationFrame(initializeBottle3D);
+    };
+    previewImage.onerror = () => {
+      if (!is3DBottle) previewImage.hidden = true;
+      $('#stagePlaceholder').hidden = false;
+    };
+    if (image) previewImage.src = image;
+    else previewImage.removeAttribute('src');
+    if (is3DBottle) {
+      modelStage.innerHTML = build3DModel();
+      previewImage.hidden = true;
+      $('#stagePlaceholder').hidden = true;
+      requestAnimationFrame(initializeBottle3D);
+    } else {
+      previewImage.hidden = !image;
+      $('#stagePlaceholder').hidden = Boolean(image);
     }
-    previewImage.onload = () => { previewImage.hidden = false; $('#stagePlaceholder').hidden = true; };
-    previewImage.onerror = () => { previewImage.hidden = true; $('#stagePlaceholder').hidden = false; };
-    if (image) previewImage.src = image; else previewImage.removeAttribute('src');
-    if (!use3D) $('#stagePlaceholder').hidden = !!image;
-    if (use3D && image) { previewImage.src=image; }
     $('#engravingOverlay').style.top = '52%';
     $('#engravingOverlay').style.left = '50%';
-    $('#engravingOverlay').classList.toggle('on-3d-model', use3D);
     fieldVisible('textField','text');
     fieldVisible('logoField','logo');
     fieldVisible('fontField','font');
@@ -399,34 +298,25 @@
   function closeCustomizer() {
     $('#customModal').classList.remove('open');
     document.body.classList.remove('locked');
-    if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
-    logoObjectUrl = null;
     destroyBottle3D();
+    if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
+    logoObjectUrl = null; logoImageElement = null;
+    $('#logoPreview').removeAttribute('src'); $('#logoPreview').hidden = true;
+    $('#customLogo').value = '';
     selectedProduct = null;
   }
   function updatePreview() {
     const text = $('#customText').value.trim();
-    const el = $('#textPreview');
-    el.textContent = text || 'Seu nome';
+    const previewText = $('#textPreview');
+    previewText.textContent = text;
     const font = $('#customFont').value;
-    el.style.fontFamily = font==='sans' ? 'var(--sans)' : font==='script' ? 'cursive' : 'var(--serif)';
-    el.style.fontSize = $('#customSize').value + 'px';
-    el.style.color = $('#customColor').value;
+    previewText.style.fontFamily = font==='sans' ? 'var(--sans)' : font==='script' ? 'cursive' : 'var(--serif)';
+    previewText.style.fontSize = $('#customSize').value + 'px';
+    previewText.style.color = $('#customColor').value;
     $('#engravingOverlay').style.top = $('#customPosition').value + '%';
     $('#engravingOverlay').style.left = $('#customPositionX').value + '%';
-    const modelText = $('#model3d .model-engraving');
-    if (modelText) {
-      modelText.textContent = text || 'Seu nome';
-      modelText.style.fontFamily = font==='sans' ? 'var(--sans)' : font==='script' ? 'cursive' : 'var(--serif)';
-      modelText.style.fontSize = Math.max(10,Number($('#customSize').value)*.72)+'px';
-      modelText.style.color = $('#customColor').value;
-      modelText.style.top = $('#customPosition').value+'%';
-      modelText.style.left = $('#customPositionX').value+'%';
-      const modelLogo = $('#model3d .model-logo');
-      if (modelLogo) { modelLogo.src = $('#logoPreview').src || ''; modelLogo.hidden = $('#logoPreview').hidden; }
-    }
-    drawBottlePersonalization();
-    update3DModel();
+    if (isReferenceBottle(selectedProduct)) { update3DModel(); return; }
+    $('#engravingOverlay').classList.remove('on-3d-model');
   }
   function addToQuote() {
     if (!selectedProduct) return;
@@ -540,36 +430,57 @@
     if (product) openCustomizer(product);
   });
   $('#customText').addEventListener('input',updatePreview);
-  $('#modelRotateLeft').addEventListener('click',()=>rotateModelBy(-25));
-  $('#modelRotateRight').addEventListener('click',()=>rotateModelBy(25));
-  $('#model3d').addEventListener('pointerdown',event=>{if(!$('#modelObject'))return;draggingModel=true;dragStart={x:event.clientX,y:event.clientY,rotation:modelRotation,tilt:modelTilt};$('#model3d').setPointerCapture(event.pointerId);});
-  $('#model3d').addEventListener('pointermove',event=>{if(!draggingModel||!dragStart)return;modelRotation=dragStart.rotation+(event.clientX-dragStart.x)*.8;modelTilt=Math.max(-22,Math.min(18,dragStart.tilt-(event.clientY-dragStart.y)*.35));update3DModel();});
-  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>$('#model3d').addEventListener(type,()=>{draggingModel=false;dragStart=null;}));
+  $('#modelRotateLeft').addEventListener('click',()=>rotateModelBy(-30));
+  $('#modelRotateRight').addEventListener('click',()=>rotateModelBy(30));
+  $('#clearCustomLogo').addEventListener('click',clearCustomLogo);
+  $('#resetPersonalization').addEventListener('click',resetPersonalization);
   ['customFont','customColor','customSize','customPosition','customPositionX'].forEach(id => $('#'+id).addEventListener('input',updatePreview));
   $('#customQuantity').addEventListener('change',event => {
     const value=Math.min(999,Math.max(1,Number.parseInt(event.target.value,10)||1));
     event.target.value=String(value);
   });
-  $('#customLogo').addEventListener('change',event => {
-    const file = event.target.files?.[0];
+  function resetPersonalization() {
+    $('#customText').value = '';
+    $('#customFont').value = 'serif';
+    $('#customColor').value = '#d7d9d5';
+    $('#customSize').value = '23';
+    $('#customPosition').value = '52';
+    $('#customPositionX').value = '50';
+    clearCustomLogo();
+    updatePreview();
+    toast('Personalização limpa.');
+  }
+  function clearCustomLogo() {
+    if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
+    logoObjectUrl = null; logoImageElement = null;
+    $('#customLogo').value = '';
+    $('#logoPreview').removeAttribute('src'); $('#logoPreview').hidden = true;
+    updatePreview();
+  }
+  function loadCustomLogo(file) {
     if (!file) return;
     if (!/^image\/(png|jpeg|webp|svg\+xml)$/.test(file.type) || file.size > 5*1024*1024) {
-      event.target.value = '';
+      $('#customLogo').value = '';
       toast('Escolha PNG, JPG, WEBP ou SVG de até 5 MB.');
       return;
     }
-    if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
-    logoObjectUrl = URL.createObjectURL(file);
-    $('#logoPreview').src = logoObjectUrl;
-    $('#logoPreview').hidden = false;
-    const modelLogo = $('#model3d .model-logo');
-    if (modelLogo) { modelLogo.src = logoObjectUrl; modelLogo.hidden = false; }
-    bottleLogoImage = new Image();
-    bottleLogoImage.onload = drawBottlePersonalization;
-    bottleLogoImage.src = logoObjectUrl;
-    drawBottlePersonalization();
-  });
-  $('#requestButton').addEventListener('click',addToQuote);
+    const nextUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
+      logoObjectUrl = nextUrl; logoImageElement = image;
+      $('#logoPreview').src = nextUrl; $('#logoPreview').hidden = false;
+      updatePreview();
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(nextUrl);
+      $('#customLogo').value = '';
+      toast('Não foi possível abrir essa imagem. Tente outro arquivo.');
+    };
+    image.src = nextUrl;
+  }
+  $('#customLogo').addEventListener('change',event => loadCustomLogo(event.target.files?.[0]));
+  $('#requestButton').addEventListener('click',addToQuote);  $('#requestButton').addEventListener('click',addToQuote);
   $('#quoteOpen').addEventListener('click',openQuote);
   $('#quoteClose').addEventListener('click',closeQuote);
   $('#sendQuoteButton').addEventListener('click',sendQuote);
