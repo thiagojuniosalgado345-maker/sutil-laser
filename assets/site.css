@@ -60,3 +60,14 @@
 @media(max-width:760px){.model-3d-object{transform-origin:center center;scale:.82}.model-3d-hint{bottom:8px}.model-3d-shadow{bottom:13%}}
 
 .model-3d-stage[hidden]{display:none!important}.model-logo{position:absolute;z-index:3;top:40%;left:50%;transform:translate(-50%,-50%);max-width:76px;max-height:58px;object-fit:contain;filter:drop-shadow(0 1px 1px #fff8)}
+
+
+/* Visualizador WebGL da garrafa azul — modelo 3D de geometria real, não cartões CSS. */
+.model-3d-stage.bottle-stage{background:radial-gradient(ellipse at 50% 38%,#fbf8f1 0%,#e9e4d9 62%,#d9d2c5 100%);touch-action:none}
+.bottle-3d-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:0}
+.bottle-3d-hint{position:absolute;bottom:14px;left:10px;right:10px;text-align:center;color:#77756c;font-size:8px;letter-spacing:.10em;text-transform:uppercase;pointer-events:none;text-shadow:0 1px 3px #fff}
+.model-3d-stage.bottle-stage .model-3d-hint{display:none}
+.model-3d-controls{box-shadow:0 5px 18px #30291b12;border-radius:3px}
+.model-3d-controls button{border-radius:2px;cursor:pointer;transition:background .2s,color .2s}
+.model-3d-controls button:hover{background:#343a34;color:white}
+@media(max-width:760px){.model-3d-stage.bottle-stage{min-height:290px}.bottle-3d-hint{bottom:10px}}
