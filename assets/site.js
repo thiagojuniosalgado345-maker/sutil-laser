@@ -1,5 +1,3 @@
-import { createBottleViewer } from './bottle-viewer.js';
-
 (() => {
   'use strict';
   const $ = (selector, root=document) => root.querySelector(selector);
@@ -208,10 +206,12 @@ import { createBottleViewer } from './bottle-viewer.js';
     bottleViewerGeneration += 1;
     if (bottleViewer) { bottleViewer.dispose(); bottleViewer = null; }
   }
-  function initializeBottle3D() {
+  async function initializeBottle3D() {
     const stage = $('#model3d');
     const generation = ++bottleViewerGeneration;
     try {
+      const { createBottleViewer } = await import('./bottle-viewer.js');
+      if (generation !== bottleViewerGeneration || !$('#customModal').classList.contains('open')) return;
       const viewer = createBottleViewer(stage, { customization: currentBottleCustomization() });
       if (generation !== bottleViewerGeneration || !$('#customModal').classList.contains('open')) { viewer.dispose(); return; }
       bottleViewer = viewer;
