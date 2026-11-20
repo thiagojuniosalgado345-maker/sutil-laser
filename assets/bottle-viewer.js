@@ -455,7 +455,7 @@ export async function createBottleViewer(stage, options = {}) {
     const size = bounds.getSize(new THREE.Vector3());
     const verticalSpan = size.y / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
     const horizontalSpan = size.x / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.max(0.5, camera.aspect));
-    const fitDistance = Math.max(verticalSpan, horizontalSpan) * 1.16;
+    const fitDistance = Math.max(verticalSpan, horizontalSpan) * 1.25;
     const homePosition = center.clone().add(new THREE.Vector3(fitDistance * 0.16, size.y * 0.045, fitDistance));
     camera.position.copy(homePosition);
     controls = new OrbitControls(camera, renderer.domElement);
