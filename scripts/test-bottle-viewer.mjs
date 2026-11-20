@@ -15,8 +15,9 @@ try {
   await page.waitForSelector('#products [data-product]', { timeout: 30000 });
 
   const productCard = page.locator('.product-card').filter({ hasText: 'Garrafa térmica azul com tampa' }).first();
-  await productCard.locator('[data-product]').click();
+  await productCard.locator('.product-photo-open').click();
   await page.waitForSelector('#customModal.open', { timeout: 10000 });
+  if (!(await page.locator('#modalTitle').textContent()).includes('Garrafa térmica azul')) throw new Error('Product photo click did not open the selected product customizer.');
   await page.waitForFunction(() => ['ready', 'error'].includes(window.__SUTIL_3D_STATUS?.state), undefined, { timeout: 60000 });
 
   const status = await page.evaluate(() => window.__SUTIL_3D_STATUS);
