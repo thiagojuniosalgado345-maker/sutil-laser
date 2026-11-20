@@ -160,7 +160,7 @@
   }
   function build3DModel(type) {
     const shape = type === 'bottle' ? 'model-bottle' : type === 'goblet' ? 'model-goblet' : 'model-cup';
-    return '<div class="model-3d-shadow"></div><div class="model-3d-object '+shape+'" id="modelObject" aria-label="Modelo tridimensional ilustrativo do produto"><div class="model-back"></div><div class="model-side"></div><div class="model-front"><div class="model-rim"></div><div class="model-engraving" id="modelEngraving">Seu nome</div><div class="model-base"></div></div></div><div class="model-3d-hint">Arraste para girar · prévia ilustrativa</div>';
+    return '<div class="model-3d-shadow"></div><div class="model-3d-object '+shape+'" id="modelObject" aria-label="Modelo tridimensional ilustrativo do produto"><div class="model-back"></div><div class="model-side"></div><div class="model-front"><div class="model-rim"></div><img class="model-logo" alt="" hidden><div class="model-engraving" id="modelEngraving">Seu nome</div><div class="model-base"></div></div></div><div class="model-3d-hint">Arraste para girar · prévia ilustrativa</div>';
   }
   function update3DModel() {
     const object = $('#modelObject');
@@ -246,6 +246,8 @@
       modelText.style.color = $('#customColor').value;
       modelText.style.top = $('#customPosition').value+'%';
       modelText.style.left = $('#customPositionX').value+'%';
+      const modelLogo = $('#model3d .model-logo');
+      if (modelLogo) { modelLogo.src = $('#logoPreview').src || ''; modelLogo.hidden = $('#logoPreview').hidden; }
     }
     update3DModel();
   }
@@ -383,6 +385,8 @@
     logoObjectUrl = URL.createObjectURL(file);
     $('#logoPreview').src = logoObjectUrl;
     $('#logoPreview').hidden = false;
+    const modelLogo = $('#model3d .model-logo');
+    if (modelLogo) { modelLogo.src = logoObjectUrl; modelLogo.hidden = false; }
   });
   $('#requestButton').addEventListener('click',addToQuote);
   $('#quoteOpen').addEventListener('click',openQuote);
