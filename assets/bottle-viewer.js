@@ -58,7 +58,7 @@ function drawEngraving(context, customization) {
   // desaparecer para trás da parede cilíndrica quando o usuário desloca o slider.
   const x = TEXTURE_WIDTH * (0.5 + ((50 - xPercent) / 100) * 0.42);
   // O slider começa em "mais acima"; por isso o y da tela segue a mesma direção.
-  const desiredCenterY = TEXTURE_HEIGHT * yPercent / 100;
+  const desiredCenterY = TEXTURE_HEIGHT * (1 - yPercent / 100);
   const size = clamp(Number(customization.size ?? 23), 12, 38);
   const fontSize = clamp(Math.round(size * 3.85), 46, 150);
   const fontChoice = customization.font || 'serif';
@@ -150,10 +150,10 @@ function makePersonalizationOverlay(bodyMesh, renderer) {
   const uv = geometry.attributes.uv;
   if (!uv) throw new Error('A malha não contém coordenadas UV para a gravação.');
 
-  // A convenção de rotação do GLB faz o U crescer da direita para a esquerda
-  // quando visto de frente; espelhar U deixa nomes e logos legíveis na face frontal.
+  // A convenção de UV exportada pela malha inverte os dois eixos na face frontal.
+  // Compensamos U e V para nomes e logos aparecerem legíveis e na orientação correta.
   for (let index = 0; index < uv.count; index += 1) {
-    uv.setX(index, 1 - uv.getX(index));
+    uv.setXY(index, 1 - uv.getX(index), 1 - uv.getY(index));
   }
   uv.needsUpdate = true;
 
