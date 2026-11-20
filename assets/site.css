@@ -122,3 +122,21 @@
   .model-3d-controls{gap:5px;padding:6px 7px}
   .model-3d-controls button{width:32px;height:31px}
 }
+
+/* Em celular, os comandos ficam em uma coluna lateral para não cobrir tampa e alça. */
+@media(max-width:760px){
+  .model-3d-controls{
+    top:12px;
+    left:auto;
+    right:8px;
+    transform:none;
+    flex-direction:column;
+    gap:4px;
+    width:38px;
+    max-width:none;
+    padding:5px;
+    border-radius:4px;
+  }
+  .model-3d-controls span{display:none}
+  .model-3d-controls button{width:27px;height:27px;font-size:17px}
+}
