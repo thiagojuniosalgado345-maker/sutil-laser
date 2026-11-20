@@ -12,6 +12,7 @@ O código foi separado em arquivos pequenos para facilitar manutenção e transf
 ## O que o site já faz
 
 - Catálogo responsivo com busca e filtros por categoria.
+- Lista de orçamento com vários produtos, quantidades, opções de personalização e envio em uma única conversa.
 - Produtos com fotos, descrição, preço ou indicação para consultar.
 - Painel com login, cadastro, edição, publicação, ocultação e exclusão de produtos.
 - Upload de fotos para o armazenamento Supabase.
