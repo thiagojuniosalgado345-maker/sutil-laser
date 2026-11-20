@@ -62,6 +62,8 @@ try {
   });
   await page.waitForFunction(() => window.__SUTIL_3D_STATUS?.state === 'editing' && window.__SUTIL_3D_STATUS?.updates >= 4, undefined, { timeout: 15000 });
   await page.locator('#modelRotateRight').click();
+  await page.locator('#modelViewReset').click();
+  await page.locator('#modelRotateLeft').click();
   await page.screenshot({ path: 'artifacts/bottle-3d-success.png', fullPage: true });
 
   const finalStatus = await page.evaluate(() => window.__SUTIL_3D_STATUS);
